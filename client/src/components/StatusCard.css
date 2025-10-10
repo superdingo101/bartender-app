@@ -1,0 +1,30 @@
+.status-card {
+  background: rgba(255, 255, 255, 0.95);
+  color: #333;
+  border-radius: 10px;
+  padding: 20px;
+  margin: 20px 0;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.status-card.success {
+  border-left: 5px solid #10b981;
+}
+
+.status-card.error {
+  border-left: 5px solid #ef4444;
+}
+
+.status-details {
+  text-align: left;
+  margin-top: 15px;
+}
+
+.status-details p {
+  margin: 8px 0;
+  font-size: 0.9rem;
+}
+
+.status-details strong {
+  color: #667eea;
+}

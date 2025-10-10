@@ -1,0 +1,167 @@
+// Prisma Schema for Bartending App
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// User model - for authentication
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  name      String
+  role      Role     @default(CUSTOMER)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // Relations
+  events    Event[]
+  orders    Order[]
+  
+  @@map("users")
+}
+
+enum Role {
+  CUSTOMER
+  BARTENDER
+  ADMIN
+}
+
+// Event model - represents a bartending event
+model Event {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  date        DateTime
+  location    String
+  status      EventStatus @default(UPCOMING)
+  code        String   @unique // Unique code for customers to join
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Relations
+  hostId      String
+  host        User     @relation(fields: [hostId], references: [id], onDelete: Cascade)
+  drinks      EventDrink[]
+  orders      Order[]
+  
+  @@map("events")
+}
+
+enum EventStatus {
+  UPCOMING
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}
+
+// Drink model - represents available drinks
+model Drink {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  category    DrinkCategory
+  imageUrl    String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Relations
+  events      EventDrink[]
+  orders      Order[]
+  ingredients DrinkIngredient[]
+  
+  @@map("drinks")
+}
+
+enum DrinkCategory {
+  COCKTAIL
+  BEER
+  WINE
+  SPIRITS
+  NON_ALCOHOLIC
+  SPECIALTY
+}
+
+// Junction table - drinks available at specific events with pricing
+model EventDrink {
+  id        String   @id @default(uuid())
+  price     Float
+  available Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // Relations
+  eventId   String
+  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  drinkId   String
+  drink     Drink    @relation(fields: [drinkId], references: [id], onDelete: Cascade)
+  
+  @@unique([eventId, drinkId])
+  @@map("event_drinks")
+}
+
+// Order model - customer drink orders
+model Order {
+  id            String      @id @default(uuid())
+  quantity      Int         @default(1)
+  status        OrderStatus @default(PENDING)
+  customerName  String?
+  notes         String?
+  totalPrice    Float
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  
+  // Relations
+  customerId    String?
+  customer      User?       @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  eventId       String
+  event         Event       @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  drinkId       String
+  drink         Drink       @relation(fields: [drinkId], references: [id], onDelete: Cascade)
+  
+  @@map("orders")
+}
+
+enum OrderStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+// Ingredient model - for inventory management (optional)
+model Ingredient {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  unit        String   // e.g., "oz", "ml", "bottle"
+  quantity    Float
+  minQuantity Float    // Alert threshold
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Relations
+  drinks      DrinkIngredient[]
+  
+  @@map("ingredients")
+}
+
+// Junction table - ingredients in drinks
+model DrinkIngredient {
+  id           String     @id @default(uuid())
+  quantity     Float
+  unit         String
+  
+  // Relations
+  drinkId      String
+  drink        Drink      @relation(fields: [drinkId], references: [id], onDelete: Cascade)
+  ingredientId String
+  ingredient   Ingredient @relation(fields: [ingredientId], references: [id], onDelete: Cascade)
+  
+  @@unique([drinkId, ingredientId])
+  @@map("drink_ingredients")
+}
