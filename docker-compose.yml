@@ -54,6 +54,8 @@ services:
       - "3109:3000"
     depends_on:
       - backend
+    env_file:
+      - .env-frontend
     environment:
       REACT_APP_API_URL: http://192.168.0.236:5000
       CHOKIDAR_USEPOLLING: true

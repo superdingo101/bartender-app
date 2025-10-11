@@ -44,12 +44,18 @@ export const searchDrinks = (query) =>
   apiCall(`/api/drinks/search?q=${encodeURIComponent(query)}`);
 
 // Order endpoints
-export const createOrder = (orderData, token) =>
-  apiCall('/api/orders', {
+export const createOrder = (orderData, token) => {
+  const headers = { 'Content-Type': 'application/json' };
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+  
+  return apiCall('/api/orders', {
     method: 'POST',
-    headers: { Authorization: `Bearer ${token}` },
+    headers,
     body: JSON.stringify(orderData),
   });
+};
 
 export const getMyOrders = (token) =>
   apiCall('/api/orders', {

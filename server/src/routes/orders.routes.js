@@ -1,13 +1,15 @@
 const express = require('express');
 const ordersController = require('../controllers/orders.controller');
-const { authenticate, authorize } = require('../middleware/auth');
+const { authenticate, authorize, optionalAuth } = require('../middleware/auth');
 
 const router = express.Router();
 
-// All routes require authentication
+// Order creation can be done by guests or authenticated users
+router.post('/', optionalAuth, ordersController.createOrder);
+
+// Authenticated routes
 router.get('/', authenticate, ordersController.getAllOrders);
 router.get('/:id', authenticate, ordersController.getOrderById);
-router.post('/', authenticate, ordersController.createOrder);
 router.delete('/:id', authenticate, ordersController.cancelOrder);
 
 // Bartender/Admin only

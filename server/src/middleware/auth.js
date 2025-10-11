@@ -61,13 +61,20 @@ const optionalAuth = (req, res, next) => {
 
     if (authHeader && authHeader.startsWith('Bearer ')) {
       const token = authHeader.substring(7);
-      const decoded = jwt.verify(token, config.jwt.secret);
-      req.user = decoded;
+      try {
+        const decoded = jwt.verify(token, config.jwt.secret);
+        req.user = decoded;
+      } catch (error) {
+        // Invalid token, but continue as guest
+        console.log('Optional auth: Invalid token, continuing as guest');
+      }
     }
+    // No token or invalid token - continue as guest
+    next();
   } catch (error) {
-    // Ignore errors for optional auth
+    // Ignore errors for optional auth and continue
+    next();
   }
-  next();
 };
 
 module.exports = {
