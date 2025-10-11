@@ -1,14 +1,32 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { createOrder } from '../../services/api';
-import { useAuth } from '../../context/AuthContext';
 import './Cart.css';
 
+const CUSTOMER_NAME_KEY = 'bartending_app_customer_name';
+
 const Cart = ({ cart, event, onClose, onOrderPlaced }) => {
-  const { token } = useAuth();
   const [customerName, setCustomerName] = useState('');
   const [notes, setNotes] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+
+  // Load saved customer name on mount
+  useEffect(() => {
+    const savedName = localStorage.getItem(CUSTOMER_NAME_KEY);
+    if (savedName) {
+      setCustomerName(savedName);
+    }
+  }, []);
+
+  const handleCustomerNameChange = (e) => {
+    const newName = e.target.value;
+    setCustomerName(newName);
+    
+    // Save to localStorage whenever it changes
+    if (newName.trim()) {
+      localStorage.setItem(CUSTOMER_NAME_KEY, newName.trim());
+    }
+  };
 
   const handleCheckout = async () => {
     if (!customerName.trim()) {
@@ -25,6 +43,9 @@ const Cart = ({ cart, event, onClose, onOrderPlaced }) => {
     setError(null);
 
     try {
+      // Save the name before placing the order
+      localStorage.setItem(CUSTOMER_NAME_KEY, customerName.trim());
+
       // Place orders one by one
       const orders = [];
       for (const item of cart.items) {
@@ -36,7 +57,8 @@ const Cart = ({ cart, event, onClose, onOrderPlaced }) => {
           notes: notes.trim() || undefined,
         };
 
-        const response = await createOrder(orderData, token);
+        // No token needed for guest orders
+        const response = await createOrder(orderData);
         orders.push(response.order);
       }
 
@@ -45,6 +67,9 @@ const Cart = ({ cart, event, onClose, onOrderPlaced }) => {
       if (onOrderPlaced) {
         onOrderPlaced(orders);
       }
+      
+      // Clear notes but keep customer name
+      setNotes('');
       onClose();
     } catch (err) {
       setError(err.message || 'Failed to place order. Please try again.');
@@ -116,7 +141,7 @@ const Cart = ({ cart, event, onClose, onOrderPlaced }) => {
                 <input
                   type="text"
                   value={customerName}
-                  onChange={(e) => setCustomerName(e.target.value)}
+                  onChange={handleCustomerNameChange}
                   placeholder="Enter your name"
                   disabled={loading}
                 />

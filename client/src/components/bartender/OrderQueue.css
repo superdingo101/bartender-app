@@ -1,0 +1,32 @@
+.order-queue {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: 20px;
+}
+
+.empty-queue {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 80px 20px;
+  color: #666;
+}
+
+.empty-icon {
+  font-size: 4rem;
+  margin-bottom: 20px;
+}
+
+.empty-queue h3 {
+  margin-bottom: 10px;
+  color: #333;
+}
+
+.empty-queue p {
+  font-size: 0.9rem;
+}
+
+@media (max-width: 768px) {
+  .order-queue {
+    grid-template-columns: 1fr;
+  }
+}

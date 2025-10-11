@@ -6,6 +6,8 @@ const EventCodeEntry = ({ onEventFound }) => {
   const [code, setCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  
+  const appName = process.env.REACT_APP_BARTENDING_COMPANY || 'The Bartending App';
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -32,7 +34,7 @@ const EventCodeEntry = ({ onEventFound }) => {
     <div className="event-code-entry">
       <div className="entry-container">
         <div className="entry-header">
-          <h1>🍸 Welcome to Bartending App</h1>
+          <h1>🍸 Welcome to {appName}</h1>
           <p>Enter your event code to get started</p>
         </div>
 
