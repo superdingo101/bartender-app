@@ -5,6 +5,7 @@ import { getMyOrders } from '../../services/api';
 import OrderQueue from './OrderQueue';
 import OrderStats from './OrderStats';
 import './Dashboard.css';
+import Navigation from './Navigation';
 
 const Dashboard = () => {
   const { user, token, logout } = useAuth();
@@ -107,69 +108,67 @@ const Dashboard = () => {
 
   return (
     <div className="dashboard">
+      <Navigation />
+      
       {notification && (
         <div className="dashboard-notification">
           {notification}
         </div>
       )}
-
-      <div className="dashboard-header">
-        <div className="header-left">
-          <h1>👨‍🍳 Bartender Dashboard</h1>
-          <div className="connection-status">
-            <span className={`status-dot ${connected ? 'connected' : 'disconnected'}`} />
-            {connected ? 'Live' : 'Offline'}
+	  
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center space-x-4">
+            <h1 className="text-2xl font-bold text-gray-800">Order Management</h1>
+            <div className="connection-status">
+              <span className={`inline-block w-2 h-2 rounded-full ${connected ? 'bg-green-500' : 'bg-red-500'}`} />
+              <span className="ml-2 text-sm text-gray-600">
+                {connected ? 'Live' : 'Offline'}
+              </span>
+            </div>
           </div>
         </div>
-        <div className="header-right">
-          <span className="user-info">
-            {user?.name} ({user?.role})
-          </span>
-          <button onClick={logout} className="logout-btn">
-            Logout
-          </button>
+	  
+        <OrderStats orders={orders} />
+	  
+        <div className="dashboard-content">
+          <div className="filters">
+            <button
+              className={`filter-btn ${filter === 'PENDING' ? 'active' : ''}`}
+              onClick={() => setFilter('PENDING')}
+            >
+              Pending ({pendingCount})
+            </button>
+            <button
+              className={`filter-btn ${filter === 'IN_PROGRESS' ? 'active' : ''}`}
+              onClick={() => setFilter('IN_PROGRESS')}
+            >
+              In Progress ({inProgressCount})
+            </button>
+            <button
+              className={`filter-btn ${filter === 'COMPLETED' ? 'active' : ''}`}
+              onClick={() => setFilter('COMPLETED')}
+            >
+              Completed
+            </button>
+            <button
+              className={`filter-btn ${filter === 'ALL' ? 'active' : ''}`}
+              onClick={() => setFilter('ALL')}
+            >
+              All Orders
+            </button>
+          </div>
+	  
+          {loading ? (
+            <div className="loading">Loading orders...</div>
+          ) : (
+            <OrderQueue
+              orders={filteredOrders}
+              token={token}
+              onOrderUpdate={loadOrders}
+            />
+          )}
         </div>
-      </div>
-
-      <OrderStats orders={orders} />
-
-      <div className="dashboard-content">
-        <div className="filters">
-          <button
-            className={`filter-btn ${filter === 'PENDING' ? 'active' : ''}`}
-            onClick={() => setFilter('PENDING')}
-          >
-            Pending ({pendingCount})
-          </button>
-          <button
-            className={`filter-btn ${filter === 'IN_PROGRESS' ? 'active' : ''}`}
-            onClick={() => setFilter('IN_PROGRESS')}
-          >
-            In Progress ({inProgressCount})
-          </button>
-          <button
-            className={`filter-btn ${filter === 'COMPLETED' ? 'active' : ''}`}
-            onClick={() => setFilter('COMPLETED')}
-          >
-            Completed
-          </button>
-          <button
-            className={`filter-btn ${filter === 'ALL' ? 'active' : ''}`}
-            onClick={() => setFilter('ALL')}
-          >
-            All Orders
-          </button>
-        </div>
-
-        {loading ? (
-          <div className="loading">Loading orders...</div>
-        ) : (
-          <OrderQueue
-            orders={filteredOrders}
-            token={token}
-            onOrderUpdate={loadOrders}
-          />
-        )}
       </div>
     </div>
   );
