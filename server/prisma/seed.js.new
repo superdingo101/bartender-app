@@ -1,0 +1,294 @@
+const { PrismaClient } = require('@prisma/client');
+const bcrypt = require('bcryptjs');
+
+const prisma = new PrismaClient();
+
+async function main() {
+  console.log('🌱 Starting database seed...');
+
+  // Create admin user
+  const hashedPassword = await bcrypt.hash('admin123', 10);
+  
+  const admin = await prisma.user.upsert({
+    where: { email: 'admin@bartending.app' },
+    update: {},
+    create: {
+      email: 'admin@bartending.app',
+      password: hashedPassword,
+      name: 'Admin User',
+      role: 'ADMIN',
+    },
+  });
+
+  console.log('✅ Created admin user:', admin.email);
+
+  // Create bartender user
+  const bartender = await prisma.user.upsert({
+    where: { email: 'bartender@bartending.app' },
+    update: {},
+    create: {
+      email: 'bartender@bartending.app',
+      password: await bcrypt.hash('bartender123', 10),
+      name: 'John Bartender',
+      role: 'BARTENDER',
+    },
+  });
+
+  console.log('✅ Created bartender user:', bartender.email);
+
+  // Create categories
+  const categoryDefinitions = [
+    { name: 'COCKTAIL', displayName: 'Cocktails', icon: '🍸' },
+    { name: 'BEER', displayName: 'Beer', icon: '🍺' },
+    { name: 'WINE', displayName: 'Wine', icon: '🍷' },
+    { name: 'SPIRITS', displayName: 'Spirits', icon: '🥃' },
+    { name: 'NON_ALCOHOLIC', displayName: 'Non-Alcoholic', icon: '🥤' },
+    { name: 'SPECIALTY', displayName: 'Specialty', icon: '✨' },
+    { name: 'FROZEN', displayName: 'Frozen', icon: '🧊' },
+    { name: 'SHOTS', displayName: 'Shots', icon: '🥃' },
+    { name: 'MOCKTAILS', displayName: 'Mocktails', icon: '🍹' },
+    { name: 'SEASONAL', displayName: 'Seasonal', icon: '🍂' },
+  ];
+
+  const categories = {};
+  for (const cat of categoryDefinitions) {
+    categories[cat.name] = await prisma.category.upsert({
+      where: { name: cat.name },
+      update: { displayName: cat.displayName, icon: cat.icon },
+      create: cat,
+    });
+  }
+
+  console.log('✅ Created categories:', Object.keys(categories).length);
+
+  // Create drinks with multiple categories
+  const drinkDefinitions = [
+    {
+      id: '1',
+      name: 'Mojito',
+      description: 'Classic Cuban cocktail with mint, lime, rum, and soda',
+      imageUrl: '/images/mojito.jpg',
+      categories: [
+        { type: 'COCKTAIL', isPrimary: true },
+        { type: 'SPECIALTY', isPrimary: false },
+      ],
+    },
+    {
+      id: '2',
+      name: 'Frozen Margarita',
+      description: 'Frozen tequila, lime juice, and Cointreau served with salt rim',
+      imageUrl: '/images/margarita.jpg',
+      categories: [
+        { type: 'COCKTAIL', isPrimary: true },
+        { type: 'FROZEN', isPrimary: false },
+        { type: 'SPECIALTY', isPrimary: false },
+      ],
+    },
+    {
+      id: '3',
+      name: 'Old Fashioned',
+      description: 'Whiskey cocktail with bitters, sugar, and orange peel',
+      imageUrl: '/images/old-fashioned.jpg',
+      categories: [
+        { type: 'COCKTAIL', isPrimary: true },
+        { type: 'SPIRITS', isPrimary: false },
+      ],
+    },
+    {
+      id: '4',
+      name: 'IPA Beer',
+      description: 'Hoppy India Pale Ale',
+      imageUrl: '/images/ipa.jpg',
+      categories: [
+        { type: 'BEER', isPrimary: true },
+      ],
+    },
+    {
+      id: '5',
+      name: 'Red Wine',
+      description: 'House red wine selection',
+      imageUrl: '/images/red-wine.jpg',
+      categories: [
+        { type: 'WINE', isPrimary: true },
+      ],
+    },
+    {
+      id: '6',
+      name: 'Fresh Lemonade',
+      description: 'Fresh squeezed lemonade',
+      imageUrl: '/images/lemonade.jpg',
+      categories: [
+        { type: 'NON_ALCOHOLIC', isPrimary: true },
+        { type: 'MOCKTAILS', isPrimary: false },
+      ],
+    },
+    {
+      id: '7',
+      name: 'Piña Colada',
+      description: 'Tropical frozen cocktail with rum, coconut, and pineapple',
+      imageUrl: '/images/pina-colada.jpg',
+      categories: [
+        { type: 'COCKTAIL', isPrimary: true },
+        { type: 'FROZEN', isPrimary: false },
+        { type: 'SPECIALTY', isPrimary: false },
+      ],
+    },
+    {
+      id: '8',
+      name: 'Whiskey Shot',
+      description: 'Premium whiskey shot',
+      imageUrl: '/images/whiskey-shot.jpg',
+      categories: [
+        { type: 'SHOTS', isPrimary: true },
+        { type: 'SPIRITS', isPrimary: false },
+      ],
+    },
+    {
+      id: '9',
+      name: 'Pumpkin Spice Martini',
+      description: 'Seasonal autumn cocktail with pumpkin and spice flavors',
+      imageUrl: '/images/pumpkin-martini.jpg',
+      categories: [
+        { type: 'COCKTAIL', isPrimary: true },
+        { type: 'SEASONAL', isPrimary: false },
+        { type: 'SPECIALTY', isPrimary: false },
+      ],
+    },
+    {
+      id: '10',
+      name: 'Virgin Mojito',
+      description: 'Non-alcoholic mojito with mint, lime, and soda',
+      imageUrl: '/images/virgin-mojito.jpg',
+      categories: [
+        { type: 'MOCKTAILS', isPrimary: true },
+        { type: 'NON_ALCOHOLIC', isPrimary: false },
+      ],
+    },
+  ];
+
+  // Create drinks and their category associations
+  for (const drinkDef of drinkDefinitions) {
+    const { categories: drinkCategories, ...drinkData } = drinkDef;
+    
+    const drink = await prisma.drink.upsert({
+      where: { id: drinkDef.id },
+      update: {
+        name: drinkData.name,
+        description: drinkData.description,
+        imageUrl: drinkData.imageUrl,
+      },
+      create: drinkData,
+    });
+
+    // Delete existing category associations for this drink (for clean re-seeding)
+    await prisma.drinkCategory.deleteMany({
+      where: { drinkId: drink.id },
+    });
+
+    // Create category associations
+    for (const catAssoc of drinkCategories) {
+      await prisma.drinkCategory.create({
+        data: {
+          drinkId: drink.id,
+          categoryId: categories[catAssoc.type].id,
+          isPrimary: catAssoc.isPrimary,
+        },
+      });
+    }
+  }
+
+  console.log('✅ Created drinks:', drinkDefinitions.length);
+
+  // Create sample event
+  const futureDate = new Date();
+  futureDate.setDate(futureDate.getDate() + 7);
+
+  const event = await prisma.event.upsert({
+    where: { code: 'SUMMER2024' },
+    update: {},
+    create: {
+      name: 'Summer Pool Party',
+      description: 'Annual summer celebration with tropical drinks',
+      date: futureDate,
+      location: 'Rooftop Pool, Downtown',
+      code: 'SUMMER2024',
+      status: 'UPCOMING',
+      hostId: admin.id,
+    },
+  });
+
+  console.log('✅ Created event:', event.name);
+
+  // Add drinks to event
+  const eventDrinkPrices = [
+    { drinkId: '1', price: 12.00 },  // Mojito
+    { drinkId: '2', price: 13.00 },  // Frozen Margarita
+    { drinkId: '3', price: 14.00 },  // Old Fashioned
+    { drinkId: '4', price: 7.00 },   // IPA Beer
+    { drinkId: '6', price: 4.00 },   // Fresh Lemonade
+    { drinkId: '7', price: 13.00 },  // Piña Colada
+    { drinkId: '10', price: 6.00 },  // Virgin Mojito
+  ];
+
+  for (const { drinkId, price } of eventDrinkPrices) {
+    await prisma.eventDrink.upsert({
+      where: {
+        eventId_drinkId: {
+          eventId: event.id,
+          drinkId: drinkId,
+        },
+      },
+      update: { price, available: true },
+      create: {
+        eventId: event.id,
+        drinkId: drinkId,
+        price: price,
+        available: true,
+      },
+    });
+  }
+
+  console.log('✅ Added drinks to event:', eventDrinkPrices.length);
+
+  // Create sample ingredients
+  const ingredientDefinitions = [
+    { name: 'White Rum', unit: 'oz', quantity: 100, minQuantity: 20 },
+    { name: 'Fresh Mint', unit: 'bunch', quantity: 10, minQuantity: 3 },
+    { name: 'Lime Juice', unit: 'oz', quantity: 50, minQuantity: 10 },
+    { name: 'Tequila', unit: 'oz', quantity: 80, minQuantity: 15 },
+    { name: 'Coconut Cream', unit: 'oz', quantity: 40, minQuantity: 10 },
+    { name: 'Pineapple Juice', unit: 'oz', quantity: 60, minQuantity: 15 },
+  ];
+
+  for (const ing of ingredientDefinitions) {
+    await prisma.ingredient.upsert({
+      where: { name: ing.name },
+      update: ing,
+      create: ing,
+    });
+  }
+
+  console.log('✅ Created ingredients:', ingredientDefinitions.length);
+
+  console.log('🎉 Database seeded successfully!');
+  console.log('');
+  console.log('📝 Test credentials:');
+  console.log('   Admin: admin@bartending.app / admin123');
+  console.log('   Bartender: bartender@bartending.app / bartender123');
+  console.log('   Event code: SUMMER2024');
+  console.log('');
+  console.log('📊 Database stats:');
+  console.log(`   Categories: ${Object.keys(categories).length}`);
+  console.log(`   Drinks: ${drinkDefinitions.length}`);
+  console.log(`   Event drinks: ${eventDrinkPrices.length}`);
+  console.log(`   Ingredients: ${ingredientDefinitions.length}`);
+}
+
+main()
+  .catch((e) => {
+    console.error('❌ Error seeding database:', e);
+    process.exit(1);
+  })
+  .finally(async () => {
+    await prisma.$disconnect();
+  });
