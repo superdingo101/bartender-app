@@ -57,7 +57,8 @@ services:
     env_file:
       - .env-frontend
     environment:
-      REACT_APP_API_URL: https://toucan.thevallones.com/api
+      REACT_APP_API_URL: https://bar.example.com/api # reverse_proxy config
+      # REACT_APP_API_URL: http://192.168.0.236:5000 # local hosted config
       CHOKIDAR_USEPOLLING: true
       WDS_SOCKET_PORT: 0
     volumes:
