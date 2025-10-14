@@ -51,13 +51,14 @@ services:
     container_name: bartend_frontend
     command: npm start
     ports:
-      - "3109:3000"
+      - "3000:3000"
     depends_on:
       - backend
     env_file:
       - .env-frontend
     environment:
-      REACT_APP_API_URL: https://toucan.thevallones.com/api
+      # REACT_APP_API_URL: http://192.168.0.236:5000 # local development
+      REACT_APP_API_URL: https://bar.example.com # reverse_proxy config
       CHOKIDAR_USEPOLLING: true
       WDS_SOCKET_PORT: 0
     volumes:

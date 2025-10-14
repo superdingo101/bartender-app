@@ -27,11 +27,10 @@ router.put(
   drinksController.updateDrink
 );
 
-// Admin only
 router.delete(
   '/:id',
   authenticate,
-  authorize('ADMIN'),
+  authorize('BARTENDER','ADMIN'),
   drinksController.deleteDrink
 );
 

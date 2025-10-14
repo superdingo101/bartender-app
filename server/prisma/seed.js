@@ -6,7 +6,33 @@ const prisma = new PrismaClient();
 async function main() {
   console.log('🌱 Starting database seed...');
 
-  // Create admin user
+  // ===== STEP 1: Seed Drink Categories =====
+  console.log('\n📂 Seeding drink categories...');
+  
+  const categories = [
+    { name: 'COCKTAIL', displayName: 'Cocktails', icon: '🍸' },
+    { name: 'BEER', displayName: 'Beer', icon: '🍺' },
+    { name: 'WINE', displayName: 'Wine', icon: '🍷' },
+    { name: 'SPIRITS', displayName: 'Spirits', icon: '🥃' },
+    { name: 'NON_ALCOHOLIC', displayName: 'Non-Alcoholic', icon: '🥤' },
+    { name: 'SPECIALTY', displayName: 'Specialty', icon: '✨' },
+  ];
+
+  const seededCategories = await Promise.all(
+    categories.map(cat =>
+      prisma.drinkCategoryEnum.upsert({
+        where: { name: cat.name },
+        update: {},
+        create: cat,
+      })
+    )
+  );
+
+  console.log('✅ Seeded categories:', seededCategories.map(c => c.name).join(', '));
+
+  // ===== STEP 2: Create Users =====
+  console.log('\n👤 Creating users...');
+
   const hashedPassword = await bcrypt.hash('admin123', 10);
   
   const admin = await prisma.user.upsert({
@@ -22,7 +48,6 @@ async function main() {
 
   console.log('✅ Created admin user:', admin.email);
 
-  // Create bartender user
   const bartender = await prisma.user.upsert({
     where: { email: 'bartender@bartending.app' },
     update: {},
@@ -36,7 +61,9 @@ async function main() {
 
   console.log('✅ Created bartender user:', bartender.email);
 
-  // Create sample drinks
+  // ===== STEP 3: Create Drinks with Multiple Categories =====
+  console.log('\n🍹 Creating drinks...');
+
   const drinks = await Promise.all([
     prisma.drink.upsert({
       where: { id: '1' },
@@ -45,8 +72,13 @@ async function main() {
         id: '1',
         name: 'Mojito',
         description: 'Classic Cuban cocktail with mint, lime, rum, and soda',
-        category: 'COCKTAIL',
         imageUrl: '/images/mojito.jpg',
+        categories: {
+          create: [
+            { categoryName: 'COCKTAIL', isPrimary: true },
+            { categoryName: 'SPECIALTY', isPrimary: false },
+          ],
+        },
       },
     }),
     prisma.drink.upsert({
@@ -56,8 +88,12 @@ async function main() {
         id: '2',
         name: 'Margarita',
         description: 'Tequila, lime juice, and Cointreau served with salt rim',
-        category: 'COCKTAIL',
         imageUrl: '/images/margarita.jpg',
+        categories: {
+          create: [
+            { categoryName: 'COCKTAIL', isPrimary: true },
+          ],
+        },
       },
     }),
     prisma.drink.upsert({
@@ -67,8 +103,13 @@ async function main() {
         id: '3',
         name: 'Old Fashioned',
         description: 'Whiskey cocktail with bitters, sugar, and orange peel',
-        category: 'COCKTAIL',
         imageUrl: '/images/old-fashioned.jpg',
+        categories: {
+          create: [
+            { categoryName: 'COCKTAIL', isPrimary: true },
+            { categoryName: 'SPIRITS', isPrimary: false },
+          ],
+        },
       },
     }),
     prisma.drink.upsert({
@@ -78,8 +119,12 @@ async function main() {
         id: '4',
         name: 'IPA Beer',
         description: 'Hoppy India Pale Ale',
-        category: 'BEER',
         imageUrl: '/images/ipa.jpg',
+        categories: {
+          create: [
+            { categoryName: 'BEER', isPrimary: true },
+          ],
+        },
       },
     }),
     prisma.drink.upsert({
@@ -89,8 +134,12 @@ async function main() {
         id: '5',
         name: 'Red Wine',
         description: 'House red wine selection',
-        category: 'WINE',
         imageUrl: '/images/red-wine.jpg',
+        categories: {
+          create: [
+            { categoryName: 'WINE', isPrimary: true },
+          ],
+        },
       },
     }),
     prisma.drink.upsert({
@@ -100,15 +149,38 @@ async function main() {
         id: '6',
         name: 'Lemonade',
         description: 'Fresh squeezed lemonade',
-        category: 'NON_ALCOHOLIC',
         imageUrl: '/images/lemonade.jpg',
+        categories: {
+          create: [
+            { categoryName: 'NON_ALCOHOLIC', isPrimary: true },
+          ],
+        },
+      },
+    }),
+    prisma.drink.upsert({
+      where: { id: '7' },
+      update: {},
+      create: {
+        id: '7',
+        name: 'Mai Tai',
+        description: 'Classic tropical rum-based cocktail',
+        imageUrl: '/images/mai-tai.jpg',
+        categories: {
+          create: [
+            { categoryName: 'COCKTAIL', isPrimary: true },
+            { categoryName: 'SPECIALTY', isPrimary: false },
+            { categoryName: 'SPIRITS', isPrimary: false },
+          ],
+        },
       },
     }),
   ]);
 
   console.log('✅ Created drinks:', drinks.length);
 
-  // Create sample event
+  // ===== STEP 4: Create Event =====
+  console.log('\n📅 Creating event...');
+
   const futureDate = new Date();
   futureDate.setDate(futureDate.getDate() + 7);
 
@@ -128,7 +200,9 @@ async function main() {
 
   console.log('✅ Created event:', event.name);
 
-  // Add drinks to event
+  // ===== STEP 5: Add Drinks to Event =====
+  console.log('\n🍷 Adding drinks to event...');
+
   const eventDrinks = await Promise.all([
     prisma.eventDrink.upsert({
       where: {
@@ -205,11 +279,28 @@ async function main() {
         available: true,
       },
     }),
+    prisma.eventDrink.upsert({
+      where: {
+        eventId_drinkId: {
+          eventId: event.id,
+          drinkId: '7',
+        },
+      },
+      update: {},
+      create: {
+        eventId: event.id,
+        drinkId: '7',
+        price: 13.50,
+        available: true,
+      },
+    }),
   ]);
 
   console.log('✅ Added drinks to event:', eventDrinks.length);
 
-  // Create sample ingredients
+  // ===== STEP 6: Create Sample Ingredients =====
+  console.log('\n🧂 Creating ingredients...');
+
   const ingredients = await Promise.all([
     prisma.ingredient.upsert({
       where: { name: 'White Rum' },
@@ -245,7 +336,7 @@ async function main() {
 
   console.log('✅ Created ingredients:', ingredients.length);
 
-  console.log('🎉 Database seeded successfully!');
+  console.log('\n🎉 Database seeded successfully!');
   console.log('');
   console.log('📝 Test credentials:');
   console.log('   Admin: admin@bartending.app / admin123');

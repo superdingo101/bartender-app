@@ -6,7 +6,7 @@ This app allows event guests to browse and order drinks through a responsive Doo
 
 ---
 
-## 🚀 Features (Phases 1–7 Complete)
+## 🚀 Features
 
 ### 🧑‍💻 For Bartenders
 - Secure login (JWT authentication)
@@ -74,12 +74,8 @@ cd bartending-app
 ```
 
 ### 3️⃣ Environment Variables
-Create a `.env` file in the root directory:
-```env
-DATABASE_URL=postgres://bartend:secret@db:5432/bartending_app
-JWT_SECRET=supersecretkey
-PORT=5000
-```
+Copy the contents of `.env.example` into `.env`, `.env-frontend.example` into `.env-frontend`, and `docker-compose.example.yml` into `docker-compose.yml`.
+Edit the secrets and ip addresses as is appropriate.
 
 ### 4️⃣ Build and Start the Stack
 ```bash
@@ -158,7 +154,7 @@ Tests include:
 
 ## 🧠 Roadmap
 
-### ✅ Completed (Phases 1–7)
+### ✅ Completed
 - Core architecture & Docker setup
 - Auth system
 - Drink management
@@ -195,13 +191,6 @@ npm run dev
 Then open:
 - Frontend: `localhost:3000`
 - Backend: `localhost:5000`
-
----
-
-## 🧑‍🍳 Author
-
-**Your Name**  
-[GitHub](https://github.com/<your-username>) • [LinkedIn](https://linkedin.com/in/<your-handle>)
 
 ---
 

@@ -60,17 +60,31 @@ enum EventStatus {
   CANCELLED
 }
 
+// DrinkCategoryEnum model - master list of drink categories
+model DrinkCategoryEnum {
+  name        String   @id
+  displayName String
+  icon        String   @default("🍹")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Relations
+  drinks      DrinkCategory[]
+  
+  @@map("drink_category_enums")
+}
+
 // Drink model - represents available drinks
 model Drink {
   id          String   @id @default(uuid())
-  name        String
+  name        String   @unique
   description String?
-  category    DrinkCategory
   imageUrl    String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   
   // Relations
+  categories  DrinkCategory[]
   events      EventDrink[]
   orders      Order[]
   ingredients DrinkIngredient[]
@@ -78,13 +92,21 @@ model Drink {
   @@map("drinks")
 }
 
-enum DrinkCategory {
-  COCKTAIL
-  BEER
-  WINE
-  SPIRITS
-  NON_ALCOHOLIC
-  SPECIALTY
+// Junction table - drinks to categories (supports multiple categories per drink)
+model DrinkCategory {
+  id              String   @id @default(uuid())
+  drinkId         String
+  categoryName    String
+  isPrimary       Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  // Relations
+  drink           Drink    @relation(fields: [drinkId], references: [id], onDelete: Cascade)
+  category        DrinkCategoryEnum @relation(fields: [categoryName], references: [name], onDelete: Cascade)
+  
+  @@unique([drinkId, categoryName])
+  @@map("drink_categories")
 }
 
 // Junction table - drinks available at specific events with pricing
