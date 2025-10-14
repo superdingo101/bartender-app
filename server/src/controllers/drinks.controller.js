@@ -6,7 +6,6 @@ const getAllDrinks = async (req, res, next) => {
     const { category, search, available } = req.query;
 
     const where = {
-      ...(category && { category }),
       ...(search && {
         OR: [
           { name: { contains: search, mode: 'insensitive' } },
@@ -18,6 +17,14 @@ const getAllDrinks = async (req, res, next) => {
     const drinks = await prisma.drink.findMany({
       where,
       include: {
+        categories: {
+          include: {
+            category: true,
+          },
+          orderBy: {
+            isPrimary: 'desc',
+          },
+        },
         _count: {
           select: {
             events: true,
@@ -30,7 +37,12 @@ const getAllDrinks = async (req, res, next) => {
       },
     });
 
-    res.json({ drinks });
+    // Filter by category if provided
+    const filtered = category
+      ? drinks.filter(d => d.categories.some(dc => dc.category.name === category))
+      : drinks;
+
+    res.json({ drinks: filtered });
   } catch (error) {
     next(error);
   }
@@ -44,6 +56,14 @@ const getDrinkById = async (req, res, next) => {
     const drink = await prisma.drink.findUnique({
       where: { id },
       include: {
+        categories: {
+          include: {
+            category: true,
+          },
+          orderBy: {
+            isPrimary: 'desc',
+          },
+        },
         ingredients: {
           include: {
             ingredient: true,
@@ -102,7 +122,23 @@ const getDrinksByCategory = async (req, res, next) => {
 
     const drinks = await prisma.drink.findMany({
       where: {
-        category: category.toUpperCase(),
+        categories: {
+          some: {
+            category: {
+              name: category.toUpperCase(),
+            },
+          },
+        },
+      },
+      include: {
+        categories: {
+          include: {
+            category: true,
+          },
+          orderBy: {
+            isPrimary: 'desc',
+          },
+        },
       },
       orderBy: {
         name: 'asc',
@@ -118,16 +154,22 @@ const getDrinksByCategory = async (req, res, next) => {
 // Create new drink (Bartender/Admin only)
 const createDrink = async (req, res, next) => {
   try {
-    const { name, description, category, imageUrl } = req.body;
+    const { name, description, categories, imageUrl } = req.body;
 
     // Validate required fields
-    if (!name || !category) {
+    if (!name || !name.trim()) {
       return res.status(400).json({
-        error: 'Name and category are required',
+        error: 'Name is required',
       });
     }
 
-    // Validate category
+    if (!categories || !Array.isArray(categories) || categories.length === 0) {
+      return res.status(400).json({
+        error: 'At least one category is required',
+      });
+    }
+
+    // Validate categories
     const validCategories = [
       'COCKTAIL',
       'BEER',
@@ -137,19 +179,37 @@ const createDrink = async (req, res, next) => {
       'SPECIALTY',
     ];
 
-    if (!validCategories.includes(category)) {
-      return res.status(400).json({
-        error: 'Invalid category',
-        validCategories,
-      });
+    for (const cat of categories) {
+      if (!validCategories.includes(cat.name)) {
+        return res.status(400).json({
+          error: `Invalid category: ${cat.name}`,
+          validCategories,
+        });
+      }
     }
 
+    // Create drink with categories
     const drink = await prisma.drink.create({
       data: {
-        name,
-        description,
-        category,
-        imageUrl,
+        name: name.trim(),
+        description: description?.trim() || null,
+        imageUrl: imageUrl?.trim() || null,
+        categories: {
+          create: categories.map((cat, index) => ({
+            categoryName: cat.name,
+            isPrimary: cat.isPrimary || index === 0,
+          })),
+        },
+      },
+      include: {
+        categories: {
+          include: {
+            category: true,
+          },
+          orderBy: {
+            isPrimary: 'desc',
+          },
+        },
       },
     });
 
@@ -163,6 +223,7 @@ const createDrink = async (req, res, next) => {
         error: 'A drink with this name already exists',
       });
     }
+    console.error('Error creating drink:', error);
     next(error);
   }
 };
@@ -171,7 +232,7 @@ const createDrink = async (req, res, next) => {
 const updateDrink = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { name, description, category, imageUrl } = req.body;
+    const { name, description, categories, imageUrl } = req.body;
 
     // Check if drink exists
     const existingDrink = await prisma.drink.findUnique({
@@ -183,7 +244,7 @@ const updateDrink = async (req, res, next) => {
     }
 
     // Validate category if provided
-    if (category) {
+    if (categories && Array.isArray(categories)) {
       const validCategories = [
         'COCKTAIL',
         'BEER',
@@ -193,21 +254,51 @@ const updateDrink = async (req, res, next) => {
         'SPECIALTY',
       ];
 
-      if (!validCategories.includes(category)) {
-        return res.status(400).json({
-          error: 'Invalid category',
-          validCategories,
-        });
+      for (const cat of categories) {
+        if (!validCategories.includes(cat.name)) {
+          return res.status(400).json({
+            error: `Invalid category: ${cat.name}`,
+            validCategories,
+          });
+        }
       }
+    }
+
+    // Update drink
+    const updateData = {
+      ...(name && { name: name.trim() }),
+      ...(description !== undefined && { description: description?.trim() || null }),
+      ...(imageUrl !== undefined && { imageUrl: imageUrl?.trim() || null }),
+    };
+
+    // Handle categories update
+    if (categories && Array.isArray(categories)) {
+      // Delete existing categories
+      await prisma.drinkCategory.deleteMany({
+        where: { drinkId: id },
+      });
+
+      // Create new categories
+      updateData.categories = {
+        create: categories.map((cat, index) => ({
+          categoryName: cat.name,
+          isPrimary: cat.isPrimary || index === 0,
+        })),
+      };
     }
 
     const updatedDrink = await prisma.drink.update({
       where: { id },
-      data: {
-        ...(name && { name }),
-        ...(description !== undefined && { description }),
-        ...(category && { category }),
-        ...(imageUrl !== undefined && { imageUrl }),
+      data: updateData,
+      include: {
+        categories: {
+          include: {
+            category: true,
+          },
+          orderBy: {
+            isPrimary: 'desc',
+          },
+        },
       },
     });
 
@@ -216,6 +307,7 @@ const updateDrink = async (req, res, next) => {
       drink: updatedDrink,
     });
   } catch (error) {
+    console.error('Error updating drink:', error);
     next(error);
   }
 };
@@ -272,6 +364,14 @@ const getPopularDrinks = async (req, res, next) => {
 
     const drinks = await prisma.drink.findMany({
       include: {
+        categories: {
+          include: {
+            category: true,
+          },
+          orderBy: {
+            isPrimary: 'desc',
+          },
+        },
         _count: {
           select: {
             orders: true,
@@ -295,22 +395,23 @@ const getPopularDrinks = async (req, res, next) => {
 // Get drink categories with counts
 const getCategories = async (req, res, next) => {
   try {
-    const categories = await prisma.drink.groupBy({
-      by: ['category'],
-      _count: {
-        category: true,
-      },
-      orderBy: {
-        category: 'asc',
-      },
-    });
+    const categories = await prisma.drinkCategoryEnum.findMany();
 
-    const formattedCategories = categories.map((cat) => ({
-      name: cat.category,
-      count: cat._count.category,
-    }));
+    const withCounts = await Promise.all(
+      categories.map(async (cat) => {
+        const count = await prisma.drinkCategory.count({
+          where: { categoryName: cat.name },
+        });
+        return {
+          name: cat.name,
+          displayName: cat.displayName,
+          icon: cat.icon,
+          count,
+        };
+      })
+    );
 
-    res.json({ categories: formattedCategories });
+    res.json({ categories: withCounts });
   } catch (error) {
     next(error);
   }
@@ -335,6 +436,14 @@ const searchDrinks = async (req, res, next) => {
         ],
       },
       include: {
+        categories: {
+          include: {
+            category: true,
+          },
+          orderBy: {
+            isPrimary: 'desc',
+          },
+        },
         _count: {
           select: {
             orders: true,

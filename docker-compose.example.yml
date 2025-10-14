@@ -51,7 +51,7 @@ services:
     container_name: bartend_frontend
     command: npm start
     ports:
-      - "3109:3000"
+      - "3000:3000"
     depends_on:
       - backend
     env_file:

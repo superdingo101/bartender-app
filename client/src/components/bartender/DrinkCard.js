@@ -16,7 +16,7 @@ const DrinkCard = ({ drink, onEdit }) => {
       <div className="mb-3 flex flex-wrap gap-1">
         {allCategories.map((cat, idx) => (
           <span 
-            key={cat.id} 
+            key={`${drink.id}-${cat.name}-${idx}`}
             className={`inline-block px-2 py-1 rounded text-xs font-medium ${
               idx === 0 ? 'bg-purple-100 text-purple-800' : 'bg-gray-100 text-gray-700'
             }`}
