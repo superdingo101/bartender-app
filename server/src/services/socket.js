@@ -12,6 +12,7 @@ const initializeSocket = (server) => {
       methods: ['GET', 'POST'],
       credentials: true,
     },
+    transports: ['websocket', 'polling'],
   });
 
   // Authentication middleware
@@ -19,17 +20,24 @@ const initializeSocket = (server) => {
     const token = socket.handshake.auth.token;
 
     if (!token) {
-      // Allow anonymous connections for public events
-      socket.data.user = { role: 'GUEST' };
+      // Allow anonymous connections for public events (customers)
+      console.log(`⚠️ Socket connection without token: ${socket.id} (GUEST)`);
+      socket.data.user = { role: 'GUEST', userId: null };
       return next();
     }
 
     try {
       const decoded = jwt.verify(token, config.jwt.secret);
+      console.log(`✅ Socket authenticated: ${socket.id} - User: ${decoded.userId} (${decoded.role})`);
       socket.data.user = decoded;
+      socket.userId = decoded.userId;
+      socket.userRole = decoded.role;
       next();
     } catch (error) {
-      next(new Error('Authentication failed'));
+      console.error(`❌ Socket token verification failed: ${error.message}`);
+      // Don't reject - allow connection but mark as guest
+      socket.data.user = { role: 'GUEST', userId: null };
+      next();
     }
   });
 
@@ -54,9 +62,10 @@ const initializeSocket = (server) => {
     socket.on('join-dashboard', () => {
       if (user.role === 'BARTENDER' || user.role === 'ADMIN') {
         socket.join('bartender-dashboard');
-        console.log(`👨‍🍳 ${socket.id} joined bartender dashboard`);
+        console.log(`👨‍🍳 ${socket.id} (${user.userId}) joined bartender dashboard`);
         socket.emit('joined-dashboard');
       } else {
+        console.warn(`⚠️ Unauthorized dashboard access attempt: ${socket.id} (${user.role})`);
         socket.emit('error', { message: 'Unauthorized' });
       }
     });
@@ -79,11 +88,11 @@ const initializeSocket = (server) => {
 
     // Error handling
     socket.on('error', (error) => {
-      console.error('Socket error:', error);
+      console.error(`Socket error (${socket.id}):`, error);
     });
   });
 
-  console.log('✅ Socket.IO initialized');
+  console.log('✅ Socket.IO initialized successfully');
   return io;
 };
 
@@ -107,7 +116,7 @@ const emitNewOrder = (order) => {
   // Notify bartender dashboard
   io.to('bartender-dashboard').emit('new-order', order);
   
-  console.log(`📢 New order emitted to ${eventRoom}`);
+  console.log(`📢 New order emitted to ${eventRoom} and bartender-dashboard`);
 };
 
 // Emit order status update

@@ -11,7 +11,7 @@ import './App.css';
 import EventsPage from './components/bartender/EventsPage';
 import DrinksPage from './components/bartender/DrinksPage';
 import EventMenuPage from './components/bartender/EventMenuPage';
-
+import AdminPage from './components/admin/AdminPage';
 
 function CustomerApp() {
   const [event, setEvent] = useState(null);
@@ -203,6 +203,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <Dashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin"
+              element={
+                <ProtectedRoute requiredRole="ADMIN">
+                  <AdminPage />
                 </ProtectedRoute>
               }
             />
