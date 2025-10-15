@@ -20,11 +20,24 @@ const DrinkMenu = ({ event, cart, onAddToCart, socket }) => {
     SPECIALTY: 'Specialty',
   };
 
+  // Initialize Socket.IO connection for this event
   useEffect(() => {
-    if (!socket) return;
+    if (!socket) {
+      console.log('⚠️ Socket not available yet');
+      return;
+    }
+
+    if (!event || !event.id) {
+      console.log('⚠️ Event not available yet');
+      return;
+    }
+
+    console.log(`🎉 Joining event: ${event.id}`);
+    socket.emit('join-event', event.id);
 
     // Listen for drink availability updates
     socket.on('drink-availability-updated', ({ drinkId, available }) => {
+      console.log(`🍹 Drink availability updated: ${drinkId} = ${available}`);
       setDrinks((prev) =>
         prev.map((ed) =>
           ed.drinkId === drinkId ? { ...ed, available } : ed
@@ -33,9 +46,11 @@ const DrinkMenu = ({ event, cart, onAddToCart, socket }) => {
     });
 
     return () => {
+      console.log(`👋 Leaving event: ${event.id}`);
+      socket.emit('leave-event', event.id);
       socket.off('drink-availability-updated');
     };
-  }, [socket]);
+  }, [socket, event]);
 
   const filteredDrinks =
     selectedCategory === 'ALL'

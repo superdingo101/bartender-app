@@ -34,6 +34,14 @@ const Navigation = () => {
             >
               Drinks
             </Link>
+            {user?.role === 'ADMIN' && (
+              <Link 
+                to="/admin" 
+                className="text-gray-600 hover:text-purple-600 font-medium transition whitespace-nowrap"
+              >
+                👑 Admin
+              </Link>
+            )}
           </div>
           <div className="flex items-center space-x-2 md:space-x-4">
             <span className="text-xs md:text-sm text-gray-600 truncate max-w-[120px] md:max-w-none">

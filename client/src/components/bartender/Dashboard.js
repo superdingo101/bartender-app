@@ -9,24 +9,32 @@ import Navigation from './Navigation';
 
 const Dashboard = () => {
   const { user, token, logout } = useAuth();
-  const { socket, connected } = useSocket(token);
+  const { socket, connected } = useSocket(token); // Always pass token
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('PENDING');
   const [notification, setNotification] = useState(null);
 
   useEffect(() => {
-    loadOrders();
+    if (token) {
+      loadOrders();
+    }
   }, [token]);
 
   useEffect(() => {
-    if (!socket || !connected) return;
+    if (!socket || !connected) {
+      console.log('⚠️ Socket not ready, waiting for connection...');
+      return;
+    }
+
+    console.log('🔌 Socket connected, setting up listeners');
 
     // Join bartender dashboard
     socket.emit('join-dashboard');
 
     // Listen for new orders
     socket.on('new-order', (order) => {
+      console.log('📦 New order received:', order);
       setOrders((prev) => [order, ...prev]);
       showNotification(`🆕 New order: ${order.drink.name}`);
       playNotificationSound();
@@ -34,6 +42,7 @@ const Dashboard = () => {
 
     // Listen for order updates
     socket.on('order-updated', (updatedOrder) => {
+      console.log('📝 Order updated:', updatedOrder);
       setOrders((prev) =>
         prev.map((order) =>
           order.id === updatedOrder.id ? updatedOrder : order
@@ -43,6 +52,7 @@ const Dashboard = () => {
 
     // Listen for order cancellations
     socket.on('order-cancelled', (cancelledOrder) => {
+      console.log('❌ Order cancelled:', cancelledOrder);
       setOrders((prev) =>
         prev.map((order) =>
           order.id === cancelledOrder.id ? cancelledOrder : order
@@ -52,6 +62,7 @@ const Dashboard = () => {
     });
 
     return () => {
+      console.log('🧹 Cleaning up socket listeners');
       socket.emit('leave-dashboard');
       socket.off('new-order');
       socket.off('order-updated');
@@ -123,7 +134,7 @@ const Dashboard = () => {
             <div className="connection-status">
               <span className={`inline-block w-2 h-2 rounded-full ${connected ? 'bg-green-500' : 'bg-red-500'}`} />
               <span className="ml-2 text-sm text-gray-600">
-                {connected ? 'Live' : 'Offline'}
+                {connected ? '✅ Live' : '❌ Offline (retrying...)'}
               </span>
             </div>
           </div>
