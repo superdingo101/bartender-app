@@ -4,6 +4,13 @@ import './DrinkCard.css';
 const DrinkCard = ({ eventDrink, onAddToCart }) => {
   const { drink, price, available } = eventDrink;
 
+  // Safely get categories
+  const allCategories = drink?.categories?.map(dc => dc.category).filter(Boolean) || [];
+  const primaryCategory = drink?.categories?.find(dc => dc.isPrimary)?.category || allCategories[0];
+  
+  // Fallback icon if no category
+  const drinkIcon = primaryCategory?.icon || '🍹';
+
   const handleAddToCart = () => {
     if (available) {
       onAddToCart(drink, price);
@@ -16,7 +23,7 @@ const DrinkCard = ({ eventDrink, onAddToCart }) => {
         {drink.imageUrl ? (
           <img src={drink.imageUrl} alt={drink.name} />
         ) : (
-          <div className="drink-placeholder">🍹</div>
+          <div className="drink-placeholder">{drinkIcon}</div>
         )}
         {!available && <div className="unavailable-overlay">Unavailable</div>}
       </div>
@@ -26,7 +33,20 @@ const DrinkCard = ({ eventDrink, onAddToCart }) => {
         {drink.description && (
           <p className="drink-description">{drink.description}</p>
         )}
-        <div className="drink-category">{drink.category.replace('_', ' ')}</div>
+        {primaryCategory && (
+          <div className="drink-category">
+            {primaryCategory.icon} {primaryCategory.displayName}
+          </div>
+        )}
+        {allCategories.length > 1 && (
+          <div className="drink-categories-extra">
+            {allCategories.slice(1, 3).map((cat, idx) => (
+              <span key={cat.name || idx} className="category-badge">
+                {cat.displayName}
+              </span>
+            ))}
+          </div>
+        )}
       </div>
 
       <div className="drink-footer">

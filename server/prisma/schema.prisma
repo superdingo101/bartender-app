@@ -1,4 +1,4 @@
-// Prisma Schema for Bartending App
+// Prisma Schema for Bartending App - Enhanced with Ingredients, Glass Types, Equipment, and Instructions
 
 generator client {
   provider = "prisma-client-js"
@@ -83,11 +83,17 @@ model Drink {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   
+  // NEW: Optional glass type and equipment
+  glassTypeId String?
+  glassType   GlassType? @relation(fields: [glassTypeId], references: [id], onDelete: SetNull)
+  
   // Relations
   categories  DrinkCategory[]
   events      EventDrink[]
   orders      Order[]
   ingredients DrinkIngredient[]
+  equipment   DrinkEquipment[]
+  instructions DrinkInstruction[]
   
   @@map("drinks")
 }
@@ -156,20 +162,41 @@ enum OrderStatus {
   CANCELLED
 }
 
-// Ingredient model - for inventory management (optional)
+// NEW: Ingredient model - enhanced with brand, pricing, and purchase history
 model Ingredient {
   id          String   @id @default(uuid())
   name        String   @unique
-  unit        String   // e.g., "oz", "ml", "bottle"
-  quantity    Float
+  type        String   // e.g., "Spirit", "Liqueur", "Juice", "Mixer", "Garnish", "Syrup"
+  brand       String?  // Brand name (e.g., "Bacardi", "Grey Goose")
+  unit        String   // e.g., "oz", "ml", "bottle", "dash"
+  quantity    Float    // Current inventory quantity
   minQuantity Float    // Alert threshold
+  bottlePrice Float?   // Standard bottle price
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   
   // Relations
-  drinks      DrinkIngredient[]
+  drinks          DrinkIngredient[]
+  purchaseHistory IngredientPurchase[]
   
   @@map("ingredients")
+}
+
+// NEW: Ingredient Purchase History
+model IngredientPurchase {
+  id           String   @id @default(uuid())
+  price        Float
+  quantity     Float
+  unit         String
+  purchaseDate DateTime @default(now())
+  supplier     String?
+  notes        String?
+  
+  // Relations
+  ingredientId String
+  ingredient   Ingredient @relation(fields: [ingredientId], references: [id], onDelete: Cascade)
+  
+  @@map("ingredient_purchases")
 }
 
 // Junction table - ingredients in drinks
@@ -186,4 +213,66 @@ model DrinkIngredient {
   
   @@unique([drinkId, ingredientId])
   @@map("drink_ingredients")
+}
+
+// NEW: Glass Types
+model GlassType {
+  id          String   @id @default(uuid())
+  name        String   @unique // e.g., "Martini Glass", "Rocks Glass", "Highball"
+  description String?
+  imageUrl    String?
+  capacity    Float?   // Capacity in oz
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Relations
+  drinks      Drink[]
+  
+  @@map("glass_types")
+}
+
+// NEW: Equipment
+model Equipment {
+  id          String   @id @default(uuid())
+  name        String   @unique // e.g., "Shaker", "Muddler", "Strainer", "Jigger"
+  description String?
+  imageUrl    String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Relations
+  drinks      DrinkEquipment[]
+  
+  @@map("equipment")
+}
+
+// NEW: Junction table - equipment needed for drinks
+model DrinkEquipment {
+  id          String   @id @default(uuid())
+  createdAt   DateTime @default(now())
+  
+  // Relations
+  drinkId     String
+  drink       Drink      @relation(fields: [drinkId], references: [id], onDelete: Cascade)
+  equipmentId String
+  equipment   Equipment  @relation(fields: [equipmentId], references: [id], onDelete: Cascade)
+  
+  @@unique([drinkId, equipmentId])
+  @@map("drink_equipment")
+}
+
+// NEW: Step-by-step drink instructions
+model DrinkInstruction {
+  id          String   @id @default(uuid())
+  stepNumber  Int      // Order of the instruction
+  instruction String   // The actual instruction text
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Relations
+  drinkId     String
+  drink       Drink    @relation(fields: [drinkId], references: [id], onDelete: Cascade)
+  
+  @@unique([drinkId, stepNumber])
+  @@map("drink_instructions")
 }

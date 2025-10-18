@@ -1,6 +1,6 @@
 const { prisma } = require('../services/database');
 
-// Get all drinks with filtering and search
+// Get all drinks with filtering and search (UPDATED with new relations)
 const getAllDrinks = async (req, res, next) => {
   try {
     const { category, search, available } = req.query;
@@ -25,6 +25,22 @@ const getAllDrinks = async (req, res, next) => {
             isPrimary: 'desc',
           },
         },
+        glassType: true,
+        ingredients: {
+          include: {
+            ingredient: true,
+          },
+        },
+        equipment: {
+          include: {
+            equipment: true,
+          },
+        },
+        instructions: {
+          orderBy: {
+            stepNumber: 'asc',
+          },
+        },
         _count: {
           select: {
             events: true,
@@ -37,7 +53,6 @@ const getAllDrinks = async (req, res, next) => {
       },
     });
 
-    // Filter by category if provided
     const filtered = category
       ? drinks.filter(d => d.categories.some(dc => dc.category.name === category))
       : drinks;
@@ -48,7 +63,7 @@ const getAllDrinks = async (req, res, next) => {
   }
 };
 
-// Get single drink by ID
+// Get single drink by ID (UPDATED with new relations)
 const getDrinkById = async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -64,9 +79,25 @@ const getDrinkById = async (req, res, next) => {
             isPrimary: 'desc',
           },
         },
+        glassType: true,
         ingredients: {
           include: {
             ingredient: true,
+          },
+          orderBy: {
+            ingredient: {
+              name: 'asc',
+            },
+          },
+        },
+        equipment: {
+          include: {
+            equipment: true,
+          },
+        },
+        instructions: {
+          orderBy: {
+            stepNumber: 'asc',
           },
         },
         events: {
@@ -99,7 +130,7 @@ const getDrinkById = async (req, res, next) => {
   }
 };
 
-// Get drinks by category
+// Get drinks by category (no changes needed)
 const getDrinksByCategory = async (req, res, next) => {
   try {
     const { category } = req.params;
@@ -139,6 +170,7 @@ const getDrinksByCategory = async (req, res, next) => {
             isPrimary: 'desc',
           },
         },
+        glassType: true,
       },
       orderBy: {
         name: 'asc',
@@ -151,25 +183,28 @@ const getDrinksByCategory = async (req, res, next) => {
   }
 };
 
-// Create new drink (Bartender/Admin only)
+// Create new drink (UPDATED to handle new features)
 const createDrink = async (req, res, next) => {
   try {
-    const { name, description, categories, imageUrl } = req.body;
+    const { 
+      name, 
+      description, 
+      categories, 
+      imageUrl, 
+      glassTypeId,
+      ingredients,
+      equipment,
+      instructions
+    } = req.body;
 
-    // Validate required fields
     if (!name || !name.trim()) {
-      return res.status(400).json({
-        error: 'Name is required',
-      });
+      return res.status(400).json({ error: 'Name is required' });
     }
 
     if (!categories || !Array.isArray(categories) || categories.length === 0) {
-      return res.status(400).json({
-        error: 'At least one category is required',
-      });
+      return res.status(400).json({ error: 'At least one category is required' });
     }
 
-    // Validate categories
     const validCategories = [
       'COCKTAIL',
       'BEER',
@@ -188,19 +223,52 @@ const createDrink = async (req, res, next) => {
       }
     }
 
-    // Create drink with categories
-    const drink = await prisma.drink.create({
-      data: {
-        name: name.trim(),
-        description: description?.trim() || null,
-        imageUrl: imageUrl?.trim() || null,
-        categories: {
-          create: categories.map((cat, index) => ({
-            categoryName: cat.name,
-            isPrimary: cat.isPrimary || index === 0,
-          })),
-        },
+    // Build the create data object
+    const createData = {
+      name: name.trim(),
+      description: description?.trim() || null,
+      imageUrl: imageUrl?.trim() || null,
+      ...(glassTypeId && { glassType: { connect: { id: glassTypeId } } }),
+      categories: {
+        create: categories.map((cat, index) => ({
+          categoryName: cat.name,
+          isPrimary: cat.isPrimary || index === 0,
+        })),
       },
+    };
+
+    // Add ingredients if provided
+    if (ingredients && Array.isArray(ingredients) && ingredients.length > 0) {
+      createData.ingredients = {
+        create: ingredients.map(ing => ({
+          ingredientId: ing.ingredientId,
+          quantity: ing.quantity,
+          unit: ing.unit,
+        })),
+      };
+    }
+
+    // Add equipment if provided
+    if (equipment && Array.isArray(equipment) && equipment.length > 0) {
+      createData.equipment = {
+        create: equipment.map(eq => ({
+          equipmentId: eq.equipmentId,
+        })),
+      };
+    }
+
+    // Add instructions if provided
+    if (instructions && Array.isArray(instructions) && instructions.length > 0) {
+      createData.instructions = {
+        create: instructions.map((inst, index) => ({
+          stepNumber: inst.stepNumber || index + 1,
+          instruction: inst.instruction.trim(),
+        })),
+      };
+    }
+
+    const drink = await prisma.drink.create({
+      data: createData,
       include: {
         categories: {
           include: {
@@ -208,6 +276,22 @@ const createDrink = async (req, res, next) => {
           },
           orderBy: {
             isPrimary: 'desc',
+          },
+        },
+        glassType: true,
+        ingredients: {
+          include: {
+            ingredient: true,
+          },
+        },
+        equipment: {
+          include: {
+            equipment: true,
+          },
+        },
+        instructions: {
+          orderBy: {
+            stepNumber: 'asc',
           },
         },
       },
@@ -228,13 +312,21 @@ const createDrink = async (req, res, next) => {
   }
 };
 
-// Update drink (Bartender/Admin only)
+// Update drink (UPDATED to handle new features)
 const updateDrink = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { name, description, categories, imageUrl } = req.body;
+    const { 
+      name, 
+      description, 
+      categories, 
+      imageUrl, 
+      glassTypeId,
+      ingredients,
+      equipment,
+      instructions
+    } = req.body;
 
-    // Check if drink exists
     const existingDrink = await prisma.drink.findUnique({
       where: { id },
     });
@@ -243,7 +335,6 @@ const updateDrink = async (req, res, next) => {
       return res.status(404).json({ error: 'Drink not found' });
     }
 
-    // Validate category if provided
     if (categories && Array.isArray(categories)) {
       const validCategories = [
         'COCKTAIL',
@@ -264,27 +355,79 @@ const updateDrink = async (req, res, next) => {
       }
     }
 
-    // Update drink
     const updateData = {
       ...(name && { name: name.trim() }),
       ...(description !== undefined && { description: description?.trim() || null }),
       ...(imageUrl !== undefined && { imageUrl: imageUrl?.trim() || null }),
     };
 
+    // Update glass type
+    if (glassTypeId !== undefined) {
+      updateData.glassType = glassTypeId 
+        ? { connect: { id: glassTypeId } }
+        : { disconnect: true };
+    }
+
     // Handle categories update
     if (categories && Array.isArray(categories)) {
-      // Delete existing categories
       await prisma.drinkCategory.deleteMany({
         where: { drinkId: id },
       });
 
-      // Create new categories
       updateData.categories = {
         create: categories.map((cat, index) => ({
           categoryName: cat.name,
           isPrimary: cat.isPrimary || index === 0,
         })),
       };
+    }
+
+    // Handle ingredients update
+    if (ingredients !== undefined && Array.isArray(ingredients)) {
+      await prisma.drinkIngredient.deleteMany({
+        where: { drinkId: id },
+      });
+
+      if (ingredients.length > 0) {
+        updateData.ingredients = {
+          create: ingredients.map(ing => ({
+            ingredientId: ing.ingredientId,
+            quantity: ing.quantity,
+            unit: ing.unit,
+          })),
+        };
+      }
+    }
+
+    // Handle equipment update
+    if (equipment !== undefined && Array.isArray(equipment)) {
+      await prisma.drinkEquipment.deleteMany({
+        where: { drinkId: id },
+      });
+
+      if (equipment.length > 0) {
+        updateData.equipment = {
+          create: equipment.map(eq => ({
+            equipmentId: eq.equipmentId,
+          })),
+        };
+      }
+    }
+
+    // Handle instructions update
+    if (instructions !== undefined && Array.isArray(instructions)) {
+      await prisma.drinkInstruction.deleteMany({
+        where: { drinkId: id },
+      });
+
+      if (instructions.length > 0) {
+        updateData.instructions = {
+          create: instructions.map((inst, index) => ({
+            stepNumber: inst.stepNumber || index + 1,
+            instruction: inst.instruction.trim(),
+          })),
+        };
+      }
     }
 
     const updatedDrink = await prisma.drink.update({
@@ -297,6 +440,22 @@ const updateDrink = async (req, res, next) => {
           },
           orderBy: {
             isPrimary: 'desc',
+          },
+        },
+        glassType: true,
+        ingredients: {
+          include: {
+            ingredient: true,
+          },
+        },
+        equipment: {
+          include: {
+            equipment: true,
+          },
+        },
+        instructions: {
+          orderBy: {
+            stepNumber: 'asc',
           },
         },
       },
@@ -312,12 +471,11 @@ const updateDrink = async (req, res, next) => {
   }
 };
 
-// Delete drink (Admin only)
+// Delete drink (no changes needed)
 const deleteDrink = async (req, res, next) => {
   try {
     const { id } = req.params;
 
-    // Check if drink exists
     const drink = await prisma.drink.findUnique({
       where: { id },
       include: {
@@ -334,7 +492,6 @@ const deleteDrink = async (req, res, next) => {
       return res.status(404).json({ error: 'Drink not found' });
     }
 
-    // Warn if drink has orders or is in events
     if (drink._count.orders > 0 || drink._count.events > 0) {
       return res.status(409).json({
         error: 'Cannot delete drink that has existing orders or is assigned to events',
@@ -357,7 +514,7 @@ const deleteDrink = async (req, res, next) => {
   }
 };
 
-// Get popular drinks (most ordered)
+// Get popular drinks (updated include)
 const getPopularDrinks = async (req, res, next) => {
   try {
     const { limit = 10 } = req.query;
@@ -372,6 +529,7 @@ const getPopularDrinks = async (req, res, next) => {
             isPrimary: 'desc',
           },
         },
+        glassType: true,
         _count: {
           select: {
             orders: true,
@@ -392,7 +550,7 @@ const getPopularDrinks = async (req, res, next) => {
   }
 };
 
-// Get drink categories with counts
+// Get drink categories with counts (no changes)
 const getCategories = async (req, res, next) => {
   try {
     const categories = await prisma.drinkCategoryEnum.findMany();
@@ -417,7 +575,7 @@ const getCategories = async (req, res, next) => {
   }
 };
 
-// Search drinks
+// Search drinks (updated include)
 const searchDrinks = async (req, res, next) => {
   try {
     const { q } = req.query;
@@ -444,6 +602,7 @@ const searchDrinks = async (req, res, next) => {
             isPrimary: 'desc',
           },
         },
+        glassType: true,
         _count: {
           select: {
             orders: true,

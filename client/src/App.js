@@ -12,6 +12,9 @@ import EventsPage from './components/bartender/EventsPage';
 import DrinksPage from './components/bartender/DrinksPage';
 import EventMenuPage from './components/bartender/EventMenuPage';
 import AdminPage from './components/admin/AdminPage';
+import IngredientsPage from './components/bartender/IngredientsPage';
+import ResourcesPage from './components/bartender/ResourcesPage';
+import BartenderAdminPage from './components/bartender/BartenderAdminPage';
 
 function CustomerApp() {
   const [event, setEvent] = useState(null);
@@ -196,6 +199,22 @@ function App() {
                 </ProtectedRoute>
               }
             />
+			<Route
+              path="/bartender/ingredients"
+              element={
+                <ProtectedRoute>
+                  <IngredientsPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/bartender/resources"
+              element={
+                <ProtectedRoute>
+                  <ResourcesPage />
+                </ProtectedRoute>
+              }
+            />
             
             {/* Old dashboard route for order management */}
             <Route
@@ -211,6 +230,14 @@ function App() {
               element={
                 <ProtectedRoute requiredRole="ADMIN">
                   <AdminPage />
+                </ProtectedRoute>
+              }
+            />
+			<Route
+              path="/bartender/admin"
+              element={
+                <ProtectedRoute requiredRole="BARTENDER">
+                  <BartenderAdminPage />
                 </ProtectedRoute>
               }
             />

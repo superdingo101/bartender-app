@@ -8,17 +8,29 @@ const DrinkMenu = ({ event, cart, onAddToCart, socket }) => {
   const [selectedCategory, setSelectedCategory] = useState('ALL');
   const [showCart, setShowCart] = useState(false);
 
-  const categories = ['ALL', 'COCKTAIL', 'BEER', 'WINE', 'SPIRITS', 'NON_ALCOHOLIC', 'SPECIALTY'];
-
-  const categoryLabels = {
-    ALL: 'All Drinks',
-    COCKTAIL: 'Cocktails',
-    BEER: 'Beer',
-    WINE: 'Wine',
-    SPIRITS: 'Spirits',
-    NON_ALCOHOLIC: 'Non-Alcoholic',
-    SPECIALTY: 'Specialty',
-  };
+  // Get unique categories from drinks
+  const categories = React.useMemo(() => {
+    const categorySet = new Map();
+    categorySet.set('ALL', { name: 'ALL', displayName: 'All Drinks', icon: '🍹' });
+    
+    drinks.forEach(eventDrink => {
+      const drink = eventDrink.drink;
+      if (drink?.categories && Array.isArray(drink.categories)) {
+        drink.categories.forEach(dc => {
+          const cat = dc.category;
+          if (cat && !categorySet.has(cat.name)) {
+            categorySet.set(cat.name, {
+              name: cat.name,
+              displayName: cat.displayName,
+              icon: cat.icon
+            });
+          }
+        });
+      }
+    });
+    
+    return Array.from(categorySet.values());
+  }, [drinks]);
 
   // Initialize Socket.IO connection for this event
   useEffect(() => {
@@ -52,10 +64,21 @@ const DrinkMenu = ({ event, cart, onAddToCart, socket }) => {
     };
   }, [socket, event]);
 
-  const filteredDrinks =
-    selectedCategory === 'ALL'
-      ? drinks
-      : drinks.filter((ed) => ed.drink.category === selectedCategory);
+  // Filter drinks by category - FIXED to use categories array
+  const filteredDrinks = React.useMemo(() => {
+    if (selectedCategory === 'ALL') {
+      return drinks;
+    }
+    
+    return drinks.filter((eventDrink) => {
+      const drink = eventDrink.drink;
+      if (!drink?.categories || !Array.isArray(drink.categories)) {
+        return false;
+      }
+      // Check if any of the drink's categories match the selected category
+      return drink.categories.some(dc => dc.category?.name === selectedCategory);
+    });
+  }, [drinks, selectedCategory]);
 
   const availableDrinks = filteredDrinks.filter((ed) => ed.available);
 
@@ -87,20 +110,43 @@ const DrinkMenu = ({ event, cart, onAddToCart, socket }) => {
       </div>
 
       <div className="category-filter">
-        {categories.map((category) => (
-          <button
-            key={category}
-            className={`category-btn ${selectedCategory === category ? 'active' : ''}`}
-            onClick={() => setSelectedCategory(category)}
-          >
-            {categoryLabels[category]}
-          </button>
-        ))}
+        {categories.map((category) => {
+          // Count drinks in this category
+          const count = category.name === 'ALL' 
+            ? drinks.length 
+            : drinks.filter(ed => 
+                ed.drink?.categories?.some(dc => dc.category?.name === category.name)
+              ).length;
+          
+          return (
+            <button
+              key={category.name}
+              className={`category-btn ${selectedCategory === category.name ? 'active' : ''}`}
+              onClick={() => setSelectedCategory(category.name)}
+            >
+              {category.icon} {category.displayName} ({count})
+            </button>
+          );
+        })}
       </div>
 
       {availableDrinks.length === 0 ? (
         <div className="no-drinks">
-          <p>😔 No drinks available in this category</p>
+          <div className="no-drinks-icon">😔</div>
+          <h3>No drinks available</h3>
+          <p>
+            {selectedCategory === 'ALL' 
+              ? 'Check back later for drinks!'
+              : `No available drinks in ${categories.find(c => c.name === selectedCategory)?.displayName || 'this category'}`}
+          </p>
+          {selectedCategory !== 'ALL' && (
+            <button
+              onClick={() => setSelectedCategory('ALL')}
+              className="clear-filter-btn"
+            >
+              Show All Drinks
+            </button>
+          )}
         </div>
       ) : (
         <div className="drinks-grid">

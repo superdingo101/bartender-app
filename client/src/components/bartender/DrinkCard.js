@@ -1,9 +1,13 @@
 import React from 'react';
 
 const DrinkCard = ({ drink, onEdit }) => {
+  // Safely get categories - add null checks
+  const allCategories = drink.categories?.map(dc => dc.category).filter(Boolean) || [];
+  
   // Get primary category or first category
-  const primaryCategory = drink.categories?.find(dc => dc.isPrimary)?.category || drink.categories?.[0]?.category;
-  const allCategories = drink.categories?.map(dc => dc.category) || [];
+  const primaryCategory = drink.categories?.find(dc => dc.isPrimary)?.category || 
+                         allCategories[0] || 
+                         { icon: '🍹', displayName: 'Drink', name: 'UNKNOWN' };
 
   return (
     <div className="bg-white rounded-lg shadow hover:shadow-lg transition p-4">
@@ -11,19 +15,24 @@ const DrinkCard = ({ drink, onEdit }) => {
         {primaryCategory?.icon || '🍹'}
       </div>
       
-      <h3 className="text-lg font-bold text-gray-800 mb-2">{drink.name}</h3>
+      <h3 className="text-lg font-bold text-gray-800 mb-2">{drink.name || 'Unnamed Drink'}</h3>
       
       <div className="mb-3 flex flex-wrap gap-1">
-        {allCategories.map((cat, idx) => (
-          <span 
-            key={`${drink.id}-${cat.name}-${idx}`}
-            className={`inline-block px-2 py-1 rounded text-xs font-medium ${
-              idx === 0 ? 'bg-purple-100 text-purple-800' : 'bg-gray-100 text-gray-700'
-            }`}
-          >
-            {cat.icon} {cat.displayName}
-          </span>
-        ))}
+        {allCategories.map((cat, idx) => {
+          // Extra safety check
+          if (!cat) return null;
+          
+          return (
+            <span 
+              key={`${drink.id}-${cat.name || idx}-${idx}`}
+              className={`inline-block px-2 py-1 rounded text-xs font-medium ${
+                idx === 0 ? 'bg-purple-100 text-purple-800' : 'bg-gray-100 text-gray-700'
+              }`}
+            >
+              {cat.icon} {cat.displayName || cat.name}
+            </span>
+          );
+        })}
       </div>
 
       {drink.description && (

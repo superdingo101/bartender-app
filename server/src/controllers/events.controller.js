@@ -108,7 +108,18 @@ const getEventByCode = async (req, res, next) => {
             available: true,
           },
           include: {
-            drink: true,
+            drink: {
+              include: {
+                categories: {
+                  include: {
+                    category: true,
+                  },
+                  orderBy: {
+                    isPrimary: 'desc',
+                  },
+                },
+              },
+            },
           },
         },
       },

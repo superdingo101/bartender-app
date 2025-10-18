@@ -4,16 +4,21 @@ import { useSocket } from '../../hooks/useSocket';
 import { getMyOrders } from '../../services/api';
 import OrderQueue from './OrderQueue';
 import OrderStats from './OrderStats';
+import OrderDetailsModal from './OrderDetailsModal';
 import './Dashboard.css';
 import Navigation from './Navigation';
 
 const Dashboard = () => {
   const { user, token, logout } = useAuth();
-  const { socket, connected } = useSocket(token); // Always pass token
+  const { socket, connected } = useSocket(token);
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('PENDING');
   const [notification, setNotification] = useState(null);
+  
+  // Order Details Modal state
+  const [selectedOrder, setSelectedOrder] = useState(null);
+  const [showOrderDetails, setShowOrderDetails] = useState(false);
 
   useEffect(() => {
     if (token) {
@@ -29,10 +34,8 @@ const Dashboard = () => {
 
     console.log('🔌 Socket connected, setting up listeners');
 
-    // Join bartender dashboard
     socket.emit('join-dashboard');
 
-    // Listen for new orders
     socket.on('new-order', (order) => {
       console.log('📦 New order received:', order);
       setOrders((prev) => [order, ...prev]);
@@ -40,7 +43,6 @@ const Dashboard = () => {
       playNotificationSound();
     });
 
-    // Listen for order updates
     socket.on('order-updated', (updatedOrder) => {
       console.log('📝 Order updated:', updatedOrder);
       setOrders((prev) =>
@@ -50,7 +52,6 @@ const Dashboard = () => {
       );
     });
 
-    // Listen for order cancellations
     socket.on('order-cancelled', (cancelledOrder) => {
       console.log('❌ Order cancelled:', cancelledOrder);
       setOrders((prev) =>
@@ -88,7 +89,6 @@ const Dashboard = () => {
   };
 
   const playNotificationSound = () => {
-    // Simple beep using Web Audio API
     try {
       const audioContext = new (window.AudioContext || window.webkitAudioContext)();
       const oscillator = audioContext.createOscillator();
@@ -107,6 +107,14 @@ const Dashboard = () => {
       oscillator.stop(audioContext.currentTime + 0.5);
     } catch (error) {
       console.log('Audio notification failed:', error);
+    }
+  };
+
+  const handleOrderClick = (order) => {
+    // Only show details for IN_PROGRESS orders
+    if (order.status === 'IN_PROGRESS') {
+      setSelectedOrder(order);
+      setShowOrderDetails(true);
     }
   };
 
@@ -177,10 +185,26 @@ const Dashboard = () => {
               orders={filteredOrders}
               token={token}
               onOrderUpdate={loadOrders}
+              onOrderClick={handleOrderClick}
             />
           )}
         </div>
       </div>
+
+      {/* Order Details Modal */}
+      {showOrderDetails && selectedOrder && (
+        <OrderDetailsModal
+          order={selectedOrder}
+          allOrders={orders}
+          onComplete={() => {
+            loadOrders(); // Refresh orders after completion
+          }}
+          onClose={() => {
+            setShowOrderDetails(false);
+            setSelectedOrder(null);
+          }}
+        />
+      )}
     </div>
   );
 };
