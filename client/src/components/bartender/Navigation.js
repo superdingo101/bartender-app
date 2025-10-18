@@ -34,12 +34,32 @@ const Navigation = () => {
             >
               Drinks
             </Link>
+            <Link 
+              to="/bartender/ingredients" 
+              className="text-gray-600 hover:text-purple-600 font-medium transition whitespace-nowrap"
+            >
+              Ingredients
+            </Link>
+            <Link 
+              to="/bartender/resources" 
+              className="text-gray-600 hover:text-purple-600 font-medium transition whitespace-nowrap"
+            >
+              Resources
+            </Link>
             {user?.role === 'ADMIN' && (
               <Link 
                 to="/admin" 
                 className="text-gray-600 hover:text-purple-600 font-medium transition whitespace-nowrap"
               >
-                👑 Admin
+                Admin
+              </Link>
+            )}
+			{user?.role === 'BARTENDER' && (
+              <Link 
+                to="/bartender/admin" 
+                className="text-gray-600 hover:text-purple-600 font-medium transition whitespace-nowrap"
+              >
+                Admin
               </Link>
             )}
           </div>

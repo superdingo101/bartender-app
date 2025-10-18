@@ -3,7 +3,7 @@ import axios from 'axios';
 import { useAuth } from '../../context/AuthContext';
 import Navigation from './Navigation';
 import DrinkCard from './DrinkCard';
-import DrinkModal from './DrinkModal';
+import EnhancedDrinkModal from './EnhancedDrinkModal';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
 
@@ -125,9 +125,8 @@ const DrinksPage = () => {
       </div>
 
       {showModal && (
-        <DrinkModal
+        <EnhancedDrinkModal
           drink={editingDrink}
-          categories={categories}
           onClose={() => setShowModal(false)}
           onSave={() => {
             setShowModal(false);

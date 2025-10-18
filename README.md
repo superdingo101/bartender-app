@@ -79,7 +79,10 @@ Edit the secrets and ip addresses as is appropriate.
 
 ### 4️⃣ Build and Start the Stack
 ```bash
-docker compose up --build
+cd server && npm install
+cd ../client && npm install
+cd ..
+docker compose up --build -d
 ```
 
 - Frontend → http://localhost:3000  

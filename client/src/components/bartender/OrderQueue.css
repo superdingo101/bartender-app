@@ -1,32 +1,253 @@
-.order-queue {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-  gap: 20px;
+/* Add these styles to your existing OrderQueue.css file */
+
+/* Order Card Base Styles */
+.order-card {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: all 0.2s ease;
 }
 
-.empty-queue {
-  grid-column: 1 / -1;
+.order-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 12px;
+}
+
+.order-info {
+  flex: 1;
+}
+
+.drink-name {
+  font-size: 1.25rem;
+  font-weight: bold;
+  color: #1f2937;
+  margin: 0 0 4px 0;
+}
+
+.customer-name {
+  font-size: 0.875rem;
+  color: #6b7280;
+  margin: 0;
+}
+
+.order-quantity {
+  margin-left: 12px;
+}
+
+.quantity-badge {
+  display: inline-block;
+  background: #8b5cf6;
+  color: white;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-weight: bold;
+  font-size: 1.25rem;
+}
+
+.order-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  font-size: 0.875rem;
+}
+
+.order-time {
+  color: #6b7280;
+}
+
+.order-status {
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+}
+
+.status-pending {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.status-in_progress {
+  background: #fed7aa;
+  color: #9a3412;
+}
+
+.status-completed {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.status-cancelled {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.order-notes {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: #fef3c7;
+  border-radius: 8px;
+  margin-bottom: 12px;
+  font-size: 0.875rem;
+  color: #78350f;
+}
+
+.notes-icon {
+  font-size: 1rem;
+}
+
+.notes-text {
+  flex: 1;
+}
+
+/* Action Buttons */
+.order-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.order-actions button {
+  flex: 1;
+  padding: 10px 16px;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+  z-index: 10;
+}
+
+.order-actions button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-start {
+  background: #8b5cf6;
+  color: white;
+}
+
+.btn-start:hover:not(:disabled) {
+  background: #7c3aed;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(139, 92, 246, 0.3);
+}
+
+.btn-complete {
+  background: #10b981;
+  color: white;
+}
+
+.btn-complete:hover:not(:disabled) {
+  background: #059669;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(16, 185, 129, 0.3);
+}
+
+.btn-cancel {
+  background: #ef4444;
+  color: white;
+  flex: 0 0 auto;
+  min-width: 60px;
+}
+
+.btn-cancel:hover:not(:disabled) {
+  background: #dc2626;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(239, 68, 68, 0.3);
+}
+
+.completed-badge,
+.cancelled-badge {
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-weight: 600;
   text-align: center;
-  padding: 80px 20px;
-  color: #666;
+  font-size: 0.875rem;
+}
+
+.completed-badge {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.cancelled-badge {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+/* Clickable order card styling */
+.order-card.clickable {
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.order-card.clickable:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+}
+
+.order-card.clickable:active {
+  transform: translateY(0);
+}
+
+/* Recipe hint styling */
+.recipe-hint {
+  margin-top: 8px;
+  padding: 6px 12px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  font-size: 12px;
+  font-weight: 600;
+  text-align: center;
+  border-radius: 6px;
+  animation: pulse-hint 2s infinite;
+}
+
+@keyframes pulse-hint {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+/* Status-specific styling for IN_PROGRESS */
+.order-card.in_progress {
+  border-left: 4px solid #f59e0b;
+  background: linear-gradient(to right, #fffbeb 0%, white 100%);
+}
+
+/* Ensure buttons don't trigger card click */
+.order-actions button {
+  position: relative;
+  z-index: 10;
+}
+
+/* Empty state styling */
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: #9ca3af;
 }
 
 .empty-icon {
-  font-size: 4rem;
-  margin-bottom: 20px;
+  font-size: 64px;
+  margin-bottom: 16px;
 }
 
-.empty-queue h3 {
-  margin-bottom: 10px;
-  color: #333;
-}
-
-.empty-queue p {
-  font-size: 0.9rem;
-}
-
-@media (max-width: 768px) {
-  .order-queue {
-    grid-template-columns: 1fr;
-  }
+.empty-state p {
+  font-size: 18px;
+  font-weight: 500;
 }
