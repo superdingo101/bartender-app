@@ -1,7 +1,7 @@
 import React from 'react';
 import './DrinkCard.css';
 
-const DrinkCard = ({ eventDrink, onAddToCart }) => {
+const DrinkCard = ({ eventDrink, onAddToCart, hidePrices }) => {
   const { drink, price, available } = eventDrink;
 
   // Safely get categories
@@ -50,7 +50,7 @@ const DrinkCard = ({ eventDrink, onAddToCart }) => {
       </div>
 
       <div className="drink-footer">
-        <div className="drink-price">${price.toFixed(2)}</div>
+        {!hidePrices && <div className="drink-price">${price.toFixed(2)}</div>}
         <button
           className="add-button"
           onClick={handleAddToCart}

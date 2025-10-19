@@ -1,74 +1,38 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import axios from 'axios';
 import { useAuth } from '../../context/AuthContext';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
 
-const DrinkModal = ({ drink, onClose, onSave }) => {
+const EventModal = ({ event, onClose, onSave }) => {
   const { token } = useAuth();
   const [formData, setFormData] = useState({
-    name: drink?.name || '',
-    description: drink?.description || '',
-    imageUrl: drink?.imageUrl || '',
-    selectedCategories: drink?.categories?.map(dc => dc.category.name) || ['COCKTAIL']
+    name: event?.name || '',
+    description: event?.description || '',
+    date: event?.date ? new Date(event.date).toISOString().slice(0, 16) : '',
+    location: event?.location || '',
+    status: event?.status || 'UPCOMING',
+    hidePrices: event?.hidePrices || false
   });
-  const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [categoriesLoading, setCategoriesLoading] = useState(true);
   const [error, setError] = useState(null);
-
-  // Load categories on component mount
-  useEffect(() => {
-    loadCategories();
-  }, [token]);
-
-  const loadCategories = async () => {
-    try {
-      setCategoriesLoading(true);
-      const response = await axios.get(
-        `${API_URL}/api/drinks/categories`,
-        token ? { headers: { Authorization: `Bearer ${token}` } } : {}
-      );
-      setCategories(response.data.categories || []);
-    } catch (err) {
-      console.error('Failed to load categories:', err);
-      setError('Failed to load categories');
-    } finally {
-      setCategoriesLoading(false);
-    }
-  };
-
-  const toggleCategory = (categoryName) => {
-    setFormData(prev => {
-      const selected = prev.selectedCategories;
-      if (selected.includes(categoryName)) {
-        // Keep at least one category
-        if (selected.length === 1) return prev;
-        return {
-          ...prev,
-          selectedCategories: selected.filter(c => c !== categoryName)
-        };
-      } else {
-        return {
-          ...prev,
-          selectedCategories: [...selected, categoryName]
-        };
-      }
-    });
-  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(null);
 
-    // Client-side validation
     if (!formData.name || formData.name.trim().length === 0) {
-      setError('Drink name is required');
+      setError('Event name is required');
       return;
     }
 
-    if (!formData.selectedCategories || formData.selectedCategories.length === 0) {
-      setError('Please select at least one category');
+    if (!formData.date) {
+      setError('Event date is required');
+      return;
+    }
+
+    if (!formData.location || formData.location.trim().length === 0) {
+      setError('Event location is required');
       return;
     }
 
@@ -78,30 +42,29 @@ const DrinkModal = ({ drink, onClose, onSave }) => {
       const payload = {
         name: formData.name.trim(),
         description: formData.description.trim() || null,
-        imageUrl: formData.imageUrl.trim() || null,
-        categories: formData.selectedCategories.map((cat, idx) => ({
-          name: cat,
-          isPrimary: idx === 0
-        }))
+        date: new Date(formData.date).toISOString(),
+        location: formData.location.trim(),
+        status: formData.status,
+        hidePrices: formData.hidePrices
       };
 
-      if (drink) {
+      if (event) {
         await axios.put(
-          `${API_URL}/api/drinks/${drink.id}`,
+          `${API_URL}/api/events/${event.id}`,
           payload,
           { headers: { Authorization: `Bearer ${token}` } }
         );
       } else {
         await axios.post(
-          `${API_URL}/api/drinks`,
+          `${API_URL}/api/events`,
           payload,
           { headers: { Authorization: `Bearer ${token}` } }
         );
       }
       onSave();
     } catch (err) {
-      setError(err.response?.data?.error || err.message || 'Failed to save drink');
-      console.error('Error saving drink:', err);
+      setError(err.response?.data?.error || err.message || 'Failed to save event');
+      console.error('Error saving event:', err);
     } finally {
       setLoading(false);
     }
@@ -113,7 +76,7 @@ const DrinkModal = ({ drink, onClose, onSave }) => {
         <div className="p-6">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-2xl font-bold text-gray-800">
-              {drink ? 'Edit Drink' : 'Add New Drink'}
+              {event ? 'Edit Event' : 'Create New Event'}
             </h2>
             <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-2xl">
               ×
@@ -122,12 +85,12 @@ const DrinkModal = ({ drink, onClose, onSave }) => {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Drink Name *</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Event Name *</label>
               <input
                 type="text"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                placeholder="e.g., Margarita, Mojito"
+                placeholder="e.g., Summer Party, Wedding Reception"
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                 required
               />
@@ -138,63 +101,70 @@ const DrinkModal = ({ drink, onClose, onSave }) => {
               <textarea
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                placeholder="Optional description"
+                placeholder="Optional event description"
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                 rows="3"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Categories * (select at least one)
-              </label>
-              
-              {categoriesLoading ? (
-                <div className="text-center py-4 text-gray-500">
-                  Loading categories...
-                </div>
-              ) : categories.length === 0 ? (
-                <div className="text-center py-4 text-gray-500">
-                  ⚠️ No categories available. Please contact your administrator.
-                </div>
-              ) : (
-                <div className="grid grid-cols-2 gap-2">
-                  {categories.map(cat => (
-                    <button
-                      key={cat.name}
-                      type="button"
-                      onClick={() => toggleCategory(cat.name)}
-                      className={`px-4 py-3 rounded-lg font-medium transition text-left ${
-                        formData.selectedCategories.includes(cat.name)
-                          ? 'bg-purple-600 text-white'
-                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                      }`}
-                    >
-                      <span className="text-xl mr-2">{cat.icon}</span>
-                      {cat.displayName}
-                      {formData.selectedCategories[0] === cat.name && (
-                        <span className="ml-2 text-xs">⭐ Primary</span>
-                      )}
-                    </button>
-                  ))}
-                </div>
-              )}
-              
-              <p className="text-xs text-gray-500 mt-2">
-                First selected category will be the primary category
-              </p>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Date & Time *</label>
+              <input
+                type="datetime-local"
+                value={formData.date}
+                onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                required
+              />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Image URL</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Location *</label>
               <input
-                type="url"
-                value={formData.imageUrl}
-                onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
-                placeholder="https://example.com/image.jpg"
+                type="text"
+                value={formData.location}
+                onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                placeholder="e.g., Grand Ballroom, Outdoor Pavilion"
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                required
               />
             </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
+              <select
+                value={formData.status}
+                onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              >
+                <option value="UPCOMING">Upcoming</option>
+                <option value="ACTIVE">Active</option>
+                <option value="COMPLETED">Completed</option>
+                <option value="CANCELLED">Cancelled</option>
+              </select>
+            </div>
+
+            <div className="flex items-center space-x-3 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+              <input
+                type="checkbox"
+                id="hidePrices"
+                checked={formData.hidePrices}
+                onChange={(e) => setFormData({ ...formData, hidePrices: e.target.checked })}
+                className="w-5 h-5 text-purple-600 rounded"
+              />
+              <label htmlFor="hidePrices" className="flex-1 cursor-pointer">
+                <div className="font-medium text-gray-900">🎁 Hide All Prices</div>
+                <div className="text-sm text-gray-600">
+                  Enable this for events with complimentary drinks (weddings, corporate events, etc.)
+                </div>
+              </label>
+            </div>
+
+            {!event && (
+              <div className="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded-lg text-sm">
+                ℹ️ A unique event code will be automatically generated for customer access.
+              </div>
+            )}
 
             {error && (
               <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
@@ -212,10 +182,10 @@ const DrinkModal = ({ drink, onClose, onSave }) => {
               </button>
               <button
                 type="submit"
-                disabled={loading || !formData.name.trim() || categoriesLoading}
+                disabled={loading || !formData.name.trim() || !formData.date || !formData.location.trim()}
                 className="flex-1 px-6 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium disabled:opacity-50 transition"
               >
-                {loading ? 'Saving...' : (drink ? 'Update Drink' : 'Add Drink')}
+                {loading ? 'Saving...' : (event ? 'Update Event' : 'Create Event')}
               </button>
             </div>
           </form>
@@ -225,4 +195,4 @@ const DrinkModal = ({ drink, onClose, onSave }) => {
   );
 };
 
-export default DrinkModal;
+export default EventModal;

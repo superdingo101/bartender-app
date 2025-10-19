@@ -41,6 +41,7 @@ model Event {
   location    String
   status      EventStatus @default(UPCOMING)
   code        String   @unique // Unique code for customers to join
+  hidePrices  Boolean  @default(false) // Hide all prices for this event
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   

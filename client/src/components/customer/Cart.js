@@ -4,7 +4,7 @@ import './Cart.css';
 
 const CUSTOMER_NAME_KEY = 'bartending_app_customer_name';
 
-const Cart = ({ cart, event, onClose, onOrderPlaced }) => {
+const Cart = ({ cart, event, onClose, onOrderPlaced, hidePrices }) => {
   const [customerName, setCustomerName] = useState('');
   const [notes, setNotes] = useState('');
   const [loading, setLoading] = useState(false);
@@ -22,7 +22,6 @@ const Cart = ({ cart, event, onClose, onOrderPlaced }) => {
     const newName = e.target.value;
     setCustomerName(newName);
     
-    // Save to localStorage whenever it changes
     if (newName.trim()) {
       localStorage.setItem(CUSTOMER_NAME_KEY, newName.trim());
     }
@@ -43,10 +42,8 @@ const Cart = ({ cart, event, onClose, onOrderPlaced }) => {
     setError(null);
 
     try {
-      // Save the name before placing the order
       localStorage.setItem(CUSTOMER_NAME_KEY, customerName.trim());
 
-      // Place orders one by one
       const orders = [];
       for (const item of cart.items) {
         const orderData = {
@@ -57,18 +54,15 @@ const Cart = ({ cart, event, onClose, onOrderPlaced }) => {
           notes: notes.trim() || undefined,
         };
 
-        // No token needed for guest orders
         const response = await createOrder(orderData);
         orders.push(response.order);
       }
 
-      // Success! Clear cart and notify parent
       cart.clearCart();
       if (onOrderPlaced) {
         onOrderPlaced(orders);
       }
       
-      // Clear notes but keep customer name
       setNotes('');
       onClose();
     } catch (err) {
@@ -100,7 +94,9 @@ const Cart = ({ cart, event, onClose, onOrderPlaced }) => {
                 <div key={item.drink.id} className="cart-item">
                   <div className="cart-item-info">
                     <h4>{item.drink.name}</h4>
-                    <p className="cart-item-price">${item.price.toFixed(2)} each</p>
+                    {!hidePrices && (
+                      <p className="cart-item-price">${item.price.toFixed(2)} each</p>
+                    )}
                   </div>
                   <div className="cart-item-controls">
                     <button
@@ -123,17 +119,21 @@ const Cart = ({ cart, event, onClose, onOrderPlaced }) => {
                       🗑️
                     </button>
                   </div>
-                  <div className="cart-item-total">
-                    ${(item.price * item.quantity).toFixed(2)}
-                  </div>
+                  {!hidePrices && (
+                    <div className="cart-item-total">
+                      ${(item.price * item.quantity).toFixed(2)}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
 
-            <div className="cart-total">
-              <span>Total:</span>
-              <span className="total-amount">${cart.total.toFixed(2)}</span>
-            </div>
+            {!hidePrices && (
+              <div className="cart-total">
+                <span>Total:</span>
+                <span className="total-amount">${cart.total.toFixed(2)}</span>
+              </div>
+            )}
 
             <div className="cart-form">
               <div className="form-group">
@@ -169,7 +169,7 @@ const Cart = ({ cart, event, onClose, onOrderPlaced }) => {
                 onClick={handleCheckout}
                 disabled={loading || cart.items.length === 0}
               >
-                {loading ? 'Placing Order...' : `Place Order - $${cart.total.toFixed(2)}`}
+                {loading ? 'Placing Order...' : hidePrices ? 'Place Order' : `Place Order - $${cart.total.toFixed(2)}`}
               </button>
             </div>
           </>
