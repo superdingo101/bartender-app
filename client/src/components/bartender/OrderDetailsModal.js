@@ -32,10 +32,6 @@ const OrderDetailsModal = ({ order, onClose, allOrders, onComplete }) => {
   };
   
   const handleCompleteOrder = async () => {
-    if (!window.confirm('Mark this order as complete?')) {
-      return;
-    }
-
     setCompleting(true);
     try {
       await axios.put(

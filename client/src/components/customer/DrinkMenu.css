@@ -129,3 +129,15 @@
     padding: 15px;
   }
 }
+
+.complimentary-notice {
+  display: inline-block;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  margin-top: 8px;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+}

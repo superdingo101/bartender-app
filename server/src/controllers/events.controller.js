@@ -138,7 +138,7 @@ const getEventByCode = async (req, res, next) => {
 // Create new event
 const createEvent = async (req, res, next) => {
   try {
-    const { name, description, date, location, status } = req.body;
+    const { name, description, date, location, status, hidePrices } = req.body;
     const hostId = req.user.userId;
 
     // Validate required fields
@@ -165,6 +165,7 @@ const createEvent = async (req, res, next) => {
         location,
         code,
         status: status || 'UPCOMING',
+        hidePrices: hidePrices || false,
         hostId,
       },
       include: {
@@ -191,7 +192,7 @@ const createEvent = async (req, res, next) => {
 const updateEvent = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { name, description, date, location, status } = req.body;
+    const { name, description, date, location, status, hidePrices } = req.body;
     const userId = req.user.userId;
     const userRole = req.user.role;
 
@@ -219,6 +220,7 @@ const updateEvent = async (req, res, next) => {
         ...(date && { date: new Date(date) }),
         ...(location && { location }),
         ...(status && { status }),
+        ...(hidePrices !== undefined && { hidePrices }),
       },
       include: {
         host: {

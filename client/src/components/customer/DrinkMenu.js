@@ -8,6 +8,9 @@ const DrinkMenu = ({ event, cart, onAddToCart, socket }) => {
   const [selectedCategory, setSelectedCategory] = useState('ALL');
   const [showCart, setShowCart] = useState(false);
 
+  // Check if prices should be hidden
+  const hidePrices = event.hidePrices || false;
+
   // Get unique categories from drinks
   const categories = React.useMemo(() => {
     const categorySet = new Map();
@@ -64,7 +67,7 @@ const DrinkMenu = ({ event, cart, onAddToCart, socket }) => {
     };
   }, [socket, event]);
 
-  // Filter drinks by category - FIXED to use categories array
+  // Filter drinks by category
   const filteredDrinks = React.useMemo(() => {
     if (selectedCategory === 'ALL') {
       return drinks;
@@ -75,7 +78,6 @@ const DrinkMenu = ({ event, cart, onAddToCart, socket }) => {
       if (!drink?.categories || !Array.isArray(drink.categories)) {
         return false;
       }
-      // Check if any of the drink's categories match the selected category
       return drink.categories.some(dc => dc.category?.name === selectedCategory);
     });
   }, [drinks, selectedCategory]);
@@ -96,6 +98,11 @@ const DrinkMenu = ({ event, cart, onAddToCart, socket }) => {
               day: 'numeric',
             })}
           </p>
+          {hidePrices && (
+            <p className="complimentary-notice">
+              🎁 All drinks complimentary
+            </p>
+          )}
         </div>
         
         <button 
@@ -111,7 +118,6 @@ const DrinkMenu = ({ event, cart, onAddToCart, socket }) => {
 
       <div className="category-filter">
         {categories.map((category) => {
-          // Count drinks in this category
           const count = category.name === 'ALL' 
             ? drinks.length 
             : drinks.filter(ed => 
@@ -155,6 +161,7 @@ const DrinkMenu = ({ event, cart, onAddToCart, socket }) => {
               key={eventDrink.id}
               eventDrink={eventDrink}
               onAddToCart={onAddToCart}
+              hidePrices={hidePrices}
             />
           ))}
         </div>
@@ -165,6 +172,7 @@ const DrinkMenu = ({ event, cart, onAddToCart, socket }) => {
           cart={cart}
           event={event}
           onClose={() => setShowCart(false)}
+          hidePrices={hidePrices}
         />
       )}
     </div>

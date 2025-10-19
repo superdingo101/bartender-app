@@ -5,6 +5,7 @@ import { getMyOrders } from '../../services/api';
 import OrderQueue from './OrderQueue';
 import OrderStats from './OrderStats';
 import OrderDetailsModal from './OrderDetailsModal';
+import QuickAddOrderModal from './QuickAddOrderModal';
 import './Dashboard.css';
 import Navigation from './Navigation';
 
@@ -19,6 +20,9 @@ const Dashboard = () => {
   // Order Details Modal state
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [showOrderDetails, setShowOrderDetails] = useState(false);
+  
+  // Quick Add Order Modal state
+  const [showQuickAdd, setShowQuickAdd] = useState(false);
 
   useEffect(() => {
     if (token) {
@@ -146,6 +150,12 @@ const Dashboard = () => {
               </span>
             </div>
           </div>
+          <button
+            onClick={() => setShowQuickAdd(true)}
+            className="px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition"
+          >
+            ⚡ Quick Add Order
+          </button>
         </div>
 	  
         <OrderStats orders={orders} />
@@ -202,6 +212,17 @@ const Dashboard = () => {
           onClose={() => {
             setShowOrderDetails(false);
             setSelectedOrder(null);
+          }}
+        />
+      )}
+
+      {/* Quick Add Order Modal */}
+      {showQuickAdd && (
+        <QuickAddOrderModal
+          onClose={() => setShowQuickAdd(false)}
+          onOrderCreated={() => {
+            loadOrders(); // Refresh orders after creation
+            showNotification('🆕 Order created successfully!');
           }}
         />
       )}
