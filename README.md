@@ -54,7 +54,8 @@ This app allows event guests to browse and order drinks through a responsive Doo
 │   ├── tests/            # Jest test suite
 │   └── Dockerfile
 │
-├── docker-compose.yml    # Multi-container orchestration
+├── docker-compose.example.yml      # Normal-use orchestration with GHCR images
+├── docker-compose.dev.example.yml  # Development orchestration with local builds
 ├── .env.example          # Sample environment config
 └── README.md
 ```
@@ -74,20 +75,38 @@ cd bartending-app
 ```
 
 ### 3️⃣ Environment Variables
-Copy the contents of `.env.example` into `.env`, `.env-frontend.example` into `.env-frontend`, and `docker-compose.example.yml` into `docker-compose.yml`.
-Edit the secrets and ip addresses as is appropriate.
+Copy the contents of `.env.example` into `.env` and `.env-frontend.example` into `.env-frontend`.
+Edit the secrets and IP addresses as appropriate.
 
-### 4️⃣ Build and Start the Stack
+### 🚢 Non-Development Use with GHCR Images
+
+Use `docker-compose.example.yml` for normal deployments where the backend and frontend images are pulled from GHCR instead of built locally. This file defaults to `ghcr.io/superdingo101/bartender-app-server:latest` for the backend and `ghcr.io/superdingo101/bartender-app-client:latest` for the frontend.
+
 ```bash
+cp docker-compose.example.yml docker-compose.yml
+docker compose pull
+docker compose up -d
+```
+
+If you need a different tag or fork, set `BACKEND_IMAGE` and `FRONTEND_IMAGE` in your shell or `.env` before starting the stack.
+
+- Frontend → http://localhost:3000
+- Backend API → http://localhost:5000
+- PostgreSQL → localhost:5432 (internal network)
+
+### 🛠️ Development with Local Docker Builds
+
+Use the development compose example when you want Docker Compose to build the frontend and backend images from your local checkout and mount the source directories for iterative work.
+
+```bash
+cp docker-compose.dev.example.yml docker-compose.yml
 cd server && npm install
 cd ../client && npm install
 cd ..
 docker compose up --build -d
 ```
 
-- Frontend → http://localhost:3000  
-- Backend API → http://localhost:5000  
-- PostgreSQL → localhost:5432 (internal network)
+The development compose file runs the backend with `npm run dev`, mounts local source into the containers, and uses `npx prisma migrate dev --name init` for local database migrations.
 
 ---
 
