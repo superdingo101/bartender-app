@@ -1,15 +1,15 @@
-FROM node:18-alpine
+FROM node:20-alpine
 
 WORKDIR /app
 
 RUN apk add --no-cache openssl
 
-# Copy package files
+# Copy package files and install locked dependencies
 COPY package*.json ./
-COPY prisma ./prisma/
+RUN npm ci
 
-# Reinstall prisma *inside* the container to ensure correct binary for musl + OpenSSL 3
-RUN npm install prisma@latest @prisma/client@latest --force
+# Generate Prisma client for the container platform
+COPY prisma ./prisma/
 RUN npx prisma generate
 
 # Copy application code
