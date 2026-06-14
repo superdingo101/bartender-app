@@ -1,4 +1,3 @@
-# Builds images on PRs and publishes them only for tag builds.
 name: Docker Images
 
 on:
