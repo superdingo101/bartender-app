@@ -135,6 +135,46 @@ const getEventByCode = async (req, res, next) => {
   }
 };
 
+// Get public event menu by ID (for guest menu refreshes/deep links)
+const getEventMenu = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+
+    const event = await prisma.event.findUnique({
+      where: { id },
+      include: {
+        drinks: {
+          where: {
+            available: true,
+          },
+          include: {
+            drink: {
+              include: {
+                categories: {
+                  include: {
+                    category: true,
+                  },
+                  orderBy: {
+                    isPrimary: 'desc',
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!event) {
+      return res.status(404).json({ error: 'Event not found' });
+    }
+
+    res.json({ event, menu: event.drinks });
+  } catch (error) {
+    next(error);
+  }
+};
+
 // Create new event
 const createEvent = async (req, res, next) => {
   try {
@@ -387,6 +427,7 @@ module.exports = {
   getAllEvents,
   getEventById,
   getEventByCode,
+  getEventMenu,
   createEvent,
   updateEvent,
   deleteEvent,

@@ -1,4 +1,5 @@
 const { prisma } = require('../services/database');
+const { emitDrinkAvailabilityUpdate } = require('../services/socket');
 
 // Get all drinks with filtering and search (UPDATED with new relations)
 const getAllDrinks = async (req, res, next) => {
@@ -624,6 +625,62 @@ const searchDrinks = async (req, res, next) => {
   }
 };
 
+// Toggle a drink's availability for a specific event menu.
+const toggleDrink = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { eventId, available } = req.body;
+
+    if (!eventId) {
+      return res.status(400).json({
+        error: 'Event ID is required to toggle event-specific drink availability',
+      });
+    }
+
+    const existingEventDrink = await prisma.eventDrink.findUnique({
+      where: {
+        eventId_drinkId: {
+          eventId,
+          drinkId: id,
+        },
+      },
+    });
+
+    if (!existingEventDrink) {
+      return res.status(404).json({
+        error: 'Drink is not available on this event menu',
+      });
+    }
+
+    const nextAvailability =
+      typeof available === 'boolean' ? available : !existingEventDrink.available;
+
+    const eventDrink = await prisma.eventDrink.update({
+      where: {
+        eventId_drinkId: {
+          eventId,
+          drinkId: id,
+        },
+      },
+      data: {
+        available: nextAvailability,
+      },
+      include: {
+        drink: true,
+      },
+    });
+
+    emitDrinkAvailabilityUpdate(eventId, id, nextAvailability);
+
+    res.json({
+      message: 'Drink availability updated successfully',
+      eventDrink,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   getAllDrinks,
   getDrinkById,
@@ -634,4 +691,5 @@ module.exports = {
   getPopularDrinks,
   getCategories,
   searchDrinks,
+  toggleDrink,
 };

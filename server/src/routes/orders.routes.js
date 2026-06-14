@@ -9,6 +9,15 @@ router.post('/', optionalAuth, ordersController.createOrder);
 
 // Authenticated routes
 router.get('/', authenticate, ordersController.getAllOrders);
+router.get('/stream', authenticate, ordersController.getOrderStreamInfo);
+
+router.get(
+  '/event/:eventId/stats',
+  authenticate,
+  authorize('BARTENDER', 'ADMIN'),
+  ordersController.getEventOrderStats
+);
+
 router.get('/:id', authenticate, ordersController.getOrderById);
 router.delete('/:id', authenticate, ordersController.cancelOrder);
 
@@ -18,13 +27,6 @@ router.put(
   authenticate,
   authorize('BARTENDER', 'ADMIN'),
   ordersController.updateOrderStatus
-);
-
-router.get(
-  '/event/:eventId/stats',
-  authenticate,
-  authorize('BARTENDER', 'ADMIN'),
-  ordersController.getEventOrderStats
 );
 
 module.exports = router;

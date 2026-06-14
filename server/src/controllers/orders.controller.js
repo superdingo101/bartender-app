@@ -92,6 +92,17 @@ const getOrderById = async (req, res, next) => {
   }
 };
 
+// Describe the Socket.IO order stream endpoint for clients that discover it via REST.
+const getOrderStreamInfo = (req, res) => {
+  res.json({
+    transport: 'socket.io',
+    namespace: '/',
+    joinEvent: 'join-dashboard',
+    events: ['new-order', 'order-updated', 'order-cancelled'],
+    message: 'Connect with Socket.IO and emit join-dashboard to receive the real-time order stream.',
+  });
+};
+
 // Create new order
 const createOrder = async (req, res, next) => {
   try {
@@ -345,6 +356,7 @@ const getEventOrderStats = async (req, res, next) => {
 module.exports = {
   getAllOrders,
   getOrderById,
+  getOrderStreamInfo,
   createOrder,
   updateOrderStatus,
   cancelOrder,

@@ -6,6 +6,7 @@ const router = express.Router();
 
 // Public routes
 router.get('/code/:code', eventsController.getEventByCode);
+router.get('/:id/menu', eventsController.getEventMenu);
 
 // Protected routes - all users
 router.get('/', authenticate, eventsController.getAllEvents);
