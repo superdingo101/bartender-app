@@ -1,88 +1,26 @@
-import { render, screen, waitFor } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
+import { render, screen } from '@testing-library/react';
 import App from './App';
-
-// Mock fetch
-global.fetch = jest.fn();
 
 describe('App Component', () => {
   beforeEach(() => {
-    fetch.mockClear();
+    localStorage.clear();
+    window.history.pushState({}, '', '/');
   });
 
-  it('renders the main heading', () => {
+  it('renders the guest event-code entry experience', async () => {
     render(<App />);
-    const heading = screen.getByText(/Bartending App/i);
-    expect(heading).toBeInTheDocument();
+
+    expect(await screen.findByRole('heading', { name: /welcome to the bartending app/i })).toBeInTheDocument();
+    expect(screen.getByPlaceholderText(/enter event code/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /enter event/i })).toBeDisabled();
   });
 
-  it('displays loading state initially', () => {
-    fetch.mockImplementation(() => new Promise(() => {})); // Never resolves
-    render(<App />);
-    expect(screen.getByText(/Checking backend connection/i)).toBeInTheDocument();
-  });
-
-  it('displays success status when API responds', async () => {
-    fetch.mockResolvedValueOnce({
-      json: async () => ({
-        status: 'OK',
-        message: 'API is running',
-        timestamp: new Date().toISOString(),
-        database: 'configured',
-      }),
-    });
+  it('renders the bartender login page route', async () => {
+    window.history.pushState({}, '', '/bartender/login');
 
     render(<App />);
 
-    await waitFor(() => {
-      expect(screen.getByText(/Backend Connected/i)).toBeInTheDocument();
-    });
-
-    expect(screen.getByText(/Status:/i)).toBeInTheDocument();
-    expect(screen.getByText(/OK/i)).toBeInTheDocument();
-  });
-
-  it('displays error when API request fails', async () => {
-    fetch.mockRejectedValueOnce(new Error('Network error'));
-
-    render(<App />);
-
-    await waitFor(() => {
-      expect(screen.getByText(/Backend Connection Failed/i)).toBeInTheDocument();
-    });
-
-    expect(screen.getByText(/Failed to connect to backend API/i)).toBeInTheDocument();
-  });
-
-  it('refreshes status when button is clicked', async () => {
-    const user = userEvent.setup();
-    
-    fetch.mockResolvedValue({
-      json: async () => ({
-        status: 'OK',
-        message: 'API is running',
-        timestamp: new Date().toISOString(),
-        database: 'configured',
-      }),
-    });
-
-    render(<App />);
-
-    await waitFor(() => {
-      expect(screen.getByText(/Backend Connected/i)).toBeInTheDocument();
-    });
-
-    const refreshButton = screen.getByText(/Refresh Status/i);
-    await user.click(refreshButton);
-
-    expect(fetch).toHaveBeenCalledTimes(2);
-  });
-
-  it('displays Docker services information', () => {
-    render(<App />);
-    
-    expect(screen.getByText(/Frontend \(React\) - Port 3000/i)).toBeInTheDocument();
-    expect(screen.getByText(/Backend \(Express\) - Port 5000/i)).toBeInTheDocument();
-    expect(screen.getByText(/Database \(PostgreSQL\) - Port 5432/i)).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: /bartender portal/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /sign in/i })).toBeInTheDocument();
   });
 });

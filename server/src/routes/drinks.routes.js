@@ -27,6 +27,13 @@ router.put(
   drinksController.updateDrink
 );
 
+router.patch(
+  '/:id/toggle',
+  authenticate,
+  authorize('BARTENDER', 'ADMIN'),
+  drinksController.toggleDrink
+);
+
 router.delete(
   '/:id',
   authenticate,
