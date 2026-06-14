@@ -304,9 +304,12 @@ async function main() {
   const ingredients = await Promise.all([
     prisma.ingredient.upsert({
       where: { name: 'White Rum' },
-      update: {},
+      update: {
+        type: 'Spirit',
+      },
       create: {
         name: 'White Rum',
+        type: 'Spirit',
         unit: 'oz',
         quantity: 100,
         minQuantity: 20,
@@ -314,9 +317,12 @@ async function main() {
     }),
     prisma.ingredient.upsert({
       where: { name: 'Fresh Mint' },
-      update: {},
+      update: {
+        type: 'Garnish',
+      },
       create: {
         name: 'Fresh Mint',
+        type: 'Garnish',
         unit: 'bunch',
         quantity: 10,
         minQuantity: 3,
@@ -324,9 +330,12 @@ async function main() {
     }),
     prisma.ingredient.upsert({
       where: { name: 'Lime Juice' },
-      update: {},
+      update: {
+        type: 'Juice',
+      },
       create: {
         name: 'Lime Juice',
+        type: 'Juice',
         unit: 'oz',
         quantity: 50,
         minQuantity: 10,
