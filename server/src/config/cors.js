@@ -5,19 +5,17 @@ const LOCAL_DEVELOPMENT_ORIGINS = [
   'http://127.0.0.1:5173',
 ];
 
-const parseOrigins = (value) =>
-  (value || '')
-    .split(',')
-    .map((origin) => origin.trim())
-    .filter(Boolean);
+const parseOrigins = (value) => (value || '')
+  .split(',')
+  .map((origin) => origin.trim())
+  .filter(Boolean);
 
 const configuredOrigins = parseOrigins(process.env.CORS_ORIGIN || process.env.CLIENT_URL);
 const isProduction = process.env.NODE_ENV === 'production';
-const allowedOrigins = configuredOrigins.length
+const allowedOrigins = configuredOrigins.length || isProduction
   ? configuredOrigins
-  : isProduction
-    ? []
-    : LOCAL_DEVELOPMENT_ORIGINS;
+  : LOCAL_DEVELOPMENT_ORIGINS;
+const allowSameOriginProxyWithoutCors = isProduction && allowedOrigins.length === 0;
 
 const corsOrigin = (origin, callback) => {
   if (!origin) {
@@ -26,6 +24,10 @@ const corsOrigin = (origin, callback) => {
 
   if (allowedOrigins.includes(origin)) {
     return callback(null, true);
+  }
+
+  if (allowSameOriginProxyWithoutCors) {
+    return callback(null, false);
   }
 
   return callback(new Error(`Origin ${origin} is not allowed by CORS`));
@@ -37,6 +39,7 @@ const corsOptions = {
 };
 
 module.exports = {
+  allowSameOriginProxyWithoutCors,
   allowedOrigins,
   corsOptions,
   parseOrigins,
