@@ -223,3 +223,37 @@ This project is licensed under the [MIT License](LICENSE).
 ---
 
 > _“Built to make event bartending smoother, faster, and more fun.”_
+
+## 🌐 Production reverse proxy / GHCR deployment
+
+The production frontend image builds the Create React App bundle during Docker build and serves the static files with nginx on container port `80`; it does **not** run `react-scripts start`. This avoids the CRA development-server websocket in production.
+
+For a single public HTTPS origin such as `https://bartender.example.com`, leave `REACT_APP_API_URL` blank (or set it to the same public origin). The browser will then call same-origin paths:
+
+- REST API: `/api/...`
+- health check: `/health`
+- Socket.IO: `/socket.io/...`
+
+Do not set production `REACT_APP_API_URL` to a LAN address like `http://192.168.x.x:5000`; that can trigger browser local-network-access prompts and mixed-content warnings when the app is opened over HTTPS.
+
+Example Caddy config:
+
+```caddyfile
+bartender.example.com {
+  reverse_proxy /api/* backend:5000
+  reverse_proxy /health backend:5000
+  reverse_proxy /socket.io/* backend:5000
+  reverse_proxy frontend:80
+}
+```
+
+When deploying publicly, restrict backend browser origins with one of these environment variables:
+
+```env
+NODE_ENV=production
+CORS_ORIGIN=https://bartender.example.com
+# or
+CLIENT_URL=https://bartender.example.com
+```
+
+If the API is intentionally hosted on a different public HTTPS origin, set `REACT_APP_API_URL=https://api.example.com` at frontend build time and include the frontend origin in `CORS_ORIGIN` or `CLIENT_URL`.
