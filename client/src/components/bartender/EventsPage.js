@@ -7,7 +7,7 @@ import EventCard from './EventCard';
 import EventModal from './EventModal';
 import EventQRCode from './EventQRCode';
 
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+import API_URL from '../../config/api';
 
 const EventsPage = () => {
   const { token } = useAuth();

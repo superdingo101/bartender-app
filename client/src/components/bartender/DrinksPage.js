@@ -5,7 +5,7 @@ import Navigation from './Navigation';
 import DrinkCard from './DrinkCard';
 import EnhancedDrinkModal from './EnhancedDrinkModal';
 
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+import API_URL from '../../config/api';
 
 const DrinksPage = () => {
   const { token } = useAuth();

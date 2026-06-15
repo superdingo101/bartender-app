@@ -33,7 +33,7 @@ describe('API service', () => {
 
   const expectFetch = (path, options = {}) => {
     expect(global.fetch).toHaveBeenCalledWith(
-      `http://localhost:5000${path}`,
+      path,
       expect.objectContaining({
         ...options,
         headers: expect.objectContaining({

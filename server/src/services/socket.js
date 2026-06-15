@@ -1,6 +1,7 @@
 const { Server } = require('socket.io');
 const jwt = require('jsonwebtoken');
 const config = require('../config');
+const { corsOptions } = require('../config/cors');
 
 let io;
 
@@ -8,9 +9,8 @@ let io;
 const initializeSocket = (server) => {
   io = new Server(server, {
     cors: {
-      origin: process.env.CORS_ORIGIN || '*',
+      ...corsOptions,
       methods: ['GET', 'POST'],
-      credentials: true,
     },
     transports: ['websocket', 'polling'],
   });

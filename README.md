@@ -223,3 +223,52 @@ This project is licensed under the [MIT License](LICENSE).
 ---
 
 > _“Built to make event bartending smoother, faster, and more fun.”_
+
+## 🌐 Production reverse proxy / GHCR deployment
+
+The production frontend image builds the Create React App bundle during Docker build and serves the static files with nginx on container port `80`; it does **not** run `react-scripts start`. This avoids the CRA development-server websocket in production.
+
+For a single public HTTPS origin such as `https://bartender.example.com`, leave `REACT_APP_API_URL` blank (or set it to the same public origin). The browser will then call same-origin paths:
+
+- REST API: `/api/...`
+- health check: `/health`
+- Socket.IO: `/socket.io/...`
+
+Do not set production `REACT_APP_API_URL` to a LAN address like `http://192.168.x.x:5000`; that can trigger browser local-network-access prompts and mixed-content warnings when the app is opened over HTTPS.
+
+The `docker-compose.example.yml` file is self-contained for local production smoke tests: the frontend nginx container proxies `/api/*`, `/health`, and `/socket.io/*` to the backend service when `REACT_APP_API_URL` is blank, so `http://localhost:3000` can be used as the browser origin without adding a separate reverse-proxy container.
+
+Example Caddy config when Caddy runs inside the same Docker network as the `frontend` and `backend` services:
+
+```caddyfile
+bartender.example.com {
+  reverse_proxy /api/* backend:5000
+  reverse_proxy /health backend:5000
+  reverse_proxy /socket.io/* backend:5000
+  reverse_proxy frontend:80
+}
+```
+
+Example Caddy config when Caddy runs on the host or another LAN machine and reaches published compose ports on the Docker host:
+
+```caddyfile
+bartender.example.com {
+  reverse_proxy /api/* 127.0.0.1:5000
+  reverse_proxy /health 127.0.0.1:5000
+  reverse_proxy /socket.io/* 127.0.0.1:5000
+  reverse_proxy 127.0.0.1:3000
+}
+```
+
+Replace `127.0.0.1` with the Docker host LAN IP, for example `192.168.1.50`, if Caddy runs on a different machine from Docker. Keep `REACT_APP_API_URL` blank in both Caddy examples so browsers use the public same-origin URL rather than a direct LAN backend URL.
+
+When deploying publicly, restrict backend browser origins with one of these environment variables:
+
+```env
+NODE_ENV=production
+CORS_ORIGIN=https://bartender.example.com
+# or
+CLIENT_URL=https://bartender.example.com
+```
+
+If the API is intentionally hosted on a different public HTTPS origin, set `REACT_APP_API_URL=https://api.example.com` at frontend build time and include the frontend origin in `CORS_ORIGIN` or `CLIENT_URL`.

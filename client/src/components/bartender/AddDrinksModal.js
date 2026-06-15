@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import { useAuth } from '../../context/AuthContext';
 
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+import API_URL from '../../config/api';
 
 const AddDrinksModal = ({ eventId, availableDrinks, onClose, onSave }) => {
   const { token } = useAuth();

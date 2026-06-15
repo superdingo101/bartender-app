@@ -6,7 +6,7 @@ import Navigation from './Navigation';
 import EventDrinkCard from './EventDrinkCard';
 import AddDrinksModal from './AddDrinksModal';
 
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+import API_URL from '../../config/api';
 
 const EventMenuPage = () => {
   const { token } = useAuth();
