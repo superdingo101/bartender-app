@@ -1,4 +1,17 @@
-FROM node:18-alpine AS build
+FROM node:18-alpine AS dev
+
+WORKDIR /app
+
+COPY package*.json ./
+RUN npm ci
+
+COPY . .
+
+EXPOSE 3000
+
+CMD ["npm", "start"]
+
+FROM dev AS build
 
 WORKDIR /app
 
@@ -13,8 +26,10 @@ RUN npm run build
 FROM nginx:1.27-alpine
 
 COPY nginx.conf /etc/nginx/conf.d/default.conf
+COPY docker-entrypoint.sh /docker-entrypoint.sh
 COPY --from=build /app/build /usr/share/nginx/html
 
 EXPOSE 80
 
+ENTRYPOINT ["/docker-entrypoint.sh"]
 CMD ["nginx", "-g", "daemon off;"]

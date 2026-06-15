@@ -47,6 +47,7 @@ services:
     build:
       context: ./client
       dockerfile: Dockerfile
+      target: dev
     container_name: bartend_frontend
     command: npm start
     ports:
@@ -56,8 +57,8 @@ services:
     env_file:
       - .env-frontend
     environment:
-      REACT_APP_API_URL: https://bar.example.com/api # reverse_proxy config
-      # REACT_APP_API_URL: http://192.168.0.236:5000 # local hosted config
+      # Browser-accessible backend URL for the React dev server.
+      REACT_APP_API_URL: http://localhost:5000
       CHOKIDAR_USEPOLLING: true
       WDS_SOCKET_PORT: 0
     volumes:
