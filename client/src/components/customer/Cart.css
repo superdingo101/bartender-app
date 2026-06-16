@@ -1,9 +1,8 @@
 .cart-overlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  inset: 0;
+  height: 100vh;
+  height: 100dvh;
   background: rgba(0, 0, 0, 0.5);
   display: flex;
   justify-content: flex-end;
@@ -21,7 +20,11 @@
   width: 100%;
   max-width: 450px;
   height: 100vh;
+  height: 100dvh;
+  max-height: 100vh;
+  max-height: 100dvh;
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   box-shadow: -4px 0 20px rgba(0, 0, 0, 0.2);
   animation: slideIn 0.3s;
   display: flex;
@@ -219,7 +222,7 @@
   bottom: 0;
   z-index: 20;
   margin: 0 -20px -20px;
-  padding: 12px 20px 20px;
+  padding: 12px 20px calc(20px + env(safe-area-inset-bottom, 0px));
   background: white;
   box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.12);
 }
@@ -292,7 +295,7 @@
 
   .checkout-actions {
     margin: 0 -16px -16px;
-    padding: 12px 16px 16px;
+    padding: 12px 16px calc(16px + env(safe-area-inset-bottom, 0px));
   }
 
   .checkout-button {
