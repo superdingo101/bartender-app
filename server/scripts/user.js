@@ -35,6 +35,14 @@ const promptHidden = (query) => new Promise((resolve) => {
   });
 });
 
+const prompt = (query) => new Promise((resolve) => {
+  const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+  rl.question(query, (value) => {
+    rl.close();
+    resolve(value);
+  });
+});
+
 const readConfirmedPassword = async () => {
   const password = await promptHidden('Password: ');
   const confirmation = await promptHidden('Confirm password: ');
@@ -81,7 +89,11 @@ const main = async () => {
   }
 
   if (command === 'delete') {
-    const user = await deleteUser(prisma, { email: requireArg(args, 'email') });
+    const email = requireArg(args, 'email');
+    const confirmation = await prompt(`Type ${email} to confirm deletion: `);
+    if (confirmation !== email) throw new Error('Delete confirmation did not match; no user was deleted');
+
+    const user = await deleteUser(prisma, { email });
     console.log(`Deleted user ${user.email}`);
     return;
   }

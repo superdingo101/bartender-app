@@ -36,9 +36,36 @@ const ingredients = [
   { name: 'Lime Juice', type: 'Juice', unit: 'oz', quantity: 50, minQuantity: 10 },
 ];
 
-async function seedDemoContent(client = prisma) {
+const setupInstructions = 'Create an ADMIN first with: npm run user:create -- --email you@example.com --name "Your Name" --role ADMIN';
+
+async function getDemoEventHost(client, hostEmail = process.env.DEMO_EVENT_HOST_EMAIL) {
+  const normalizedEmail = (hostEmail || '').trim().toLowerCase();
+
+  if (!normalizedEmail) {
+    throw new Error(`DEMO_EVENT_HOST_EMAIL is required to seed the demo event. ${setupInstructions}`);
+  }
+
+  const host = await client.user.findUnique({
+    where: { email: normalizedEmail },
+    select: { id: true, email: true, role: true },
+  });
+
+  if (!host) {
+    throw new Error(`Demo event host ${normalizedEmail} was not found. ${setupInstructions}`);
+  }
+
+  if (!['ADMIN', 'BARTENDER'].includes(host.role)) {
+    throw new Error(`Demo event host ${normalizedEmail} must have role ADMIN or BARTENDER. Current role: ${host.role}. Use npm run user:role -- --email ${normalizedEmail} --role ADMIN to update it.`);
+  }
+
+  return host;
+}
+
+async function seedDemoContent(client = prisma, options = {}) {
   console.log('🌱 Starting demo content seed...');
   console.log('🔐 No users or default credentials are created by this seed.');
+
+  const host = await getDemoEventHost(client, options.hostEmail);
 
   await Promise.all(categories.map((category) => client.drinkCategoryEnum.upsert({
     where: { name: category.name },
@@ -72,6 +99,7 @@ async function seedDemoContent(client = prisma) {
       location: 'Rooftop Pool, Downtown',
       status: 'UPCOMING',
       hidePrices: false,
+      hostId: host.id,
     },
     create: {
       name: 'Summer Pool Party',
@@ -81,6 +109,7 @@ async function seedDemoContent(client = prisma) {
       code: 'SUMMER2026',
       status: 'UPCOMING',
       hidePrices: false,
+      hostId: host.id,
     },
   });
 
@@ -117,4 +146,4 @@ if (require.main === module) {
     .finally(async () => prisma.$disconnect());
 }
 
-module.exports = { seedDemoContent, categories, drinks };
+module.exports = { seedDemoContent, getDemoEventHost, categories, drinks };

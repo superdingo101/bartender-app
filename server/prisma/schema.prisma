@@ -46,8 +46,8 @@ model Event {
   updatedAt   DateTime @updatedAt
   
   // Relations
-  hostId      String?
-  host        User?    @relation(fields: [hostId], references: [id], onDelete: SetNull)
+  hostId      String
+  host        User     @relation(fields: [hostId], references: [id], onDelete: Cascade)
   drinks      EventDrink[]
   orders      Order[]
   
