@@ -170,20 +170,22 @@ const Cart = ({ cart, event, onClose, onOrderPlaced, hidePrices }) => {
                 </div>
               )}
 
-              <div className="checkout-callout" role="note">
-                <span className="checkout-callout-icon" aria-hidden="true">👇</span>
-                <span>Ready? Tap the button below to send your order to the bar.</span>
-              </div>
+              <div className="checkout-actions">
+                <div className="checkout-callout" role="note">
+                  <span className="checkout-callout-icon" aria-hidden="true">👇</span>
+                  <span>Ready? Tap the button below to send your order to the bar.</span>
+                </div>
 
-              <button
-                className="checkout-button"
-                onClick={handleCheckout}
-                disabled={loading || cart.items.length === 0}
-                aria-label={checkoutLabel}
-              >
-                <span className="checkout-button-icon" aria-hidden="true">🍹</span>
-                <span>{checkoutLabel}</span>
-              </button>
+                <button
+                  className="checkout-button"
+                  onClick={handleCheckout}
+                  disabled={loading || cart.items.length === 0}
+                  aria-label={checkoutLabel}
+                >
+                  <span className="checkout-button-icon" aria-hidden="true">🍹</span>
+                  <span>{checkoutLabel}</span>
+                </button>
+              </div>
             </div>
           </>
         )}
