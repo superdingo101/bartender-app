@@ -27,7 +27,7 @@ const OrderCard = ({ order, token, updating, onStatusChange }) => {
 
   const getNextStatusLabel = (currentStatus) => {
     switch (currentStatus) {
-      case 'PENDING': return 'Start Making';
+      case 'PENDING': return 'Claim';
       case 'IN_PROGRESS': return 'Mark Complete';
       default: return null;
     }
@@ -68,7 +68,7 @@ const OrderCard = ({ order, token, updating, onStatusChange }) => {
 
   const getTimeAgo = (dateString) => {
     const seconds = Math.floor((new Date() - new Date(dateString)) / 1000);
-    
+
     if (seconds < 60) return `${seconds}s ago`;
     if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
     return `${Math.floor(seconds / 3600)}h ago`;
@@ -94,18 +94,25 @@ const OrderCard = ({ order, token, updating, onStatusChange }) => {
           <span className="detail-label">Customer:</span>
           <span className="detail-value">{order.customerName || 'Guest'}</span>
         </div>
-        
+
         {order.notes && (
           <div className="detail-row">
             <span className="detail-label">Notes:</span>
             <span className="detail-value notes">{order.notes}</span>
           </div>
         )}
-        
+
         <div className="detail-row">
           <span className="detail-label">Event:</span>
           <span className="detail-value">{order.event?.name}</span>
         </div>
+
+        {order.claimedBy && (order.status === 'COMPLETED' || order.status === 'IN_PROGRESS') && (
+          <div className="detail-row">
+            <span className="detail-label">Bartender:</span>
+            <span className="detail-value">{order.claimedBy.name}</span>
+          </div>
+        )}
 
         <div className="detail-row">
           <span className="detail-label">Ordered:</span>

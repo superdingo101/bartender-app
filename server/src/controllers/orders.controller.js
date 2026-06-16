@@ -1,6 +1,52 @@
 const { prisma } = require('../services/database');
 const { emitNewOrder, emitOrderStatusUpdate, emitOrderCancelled } = require('../services/socket');
 
+const orderInclude = {
+  drink: true,
+  customer: {
+    select: {
+      id: true,
+      name: true,
+      email: true,
+    },
+  },
+  claimedBy: {
+    select: {
+      id: true,
+      name: true,
+      email: true,
+    },
+  },
+  event: {
+    select: {
+      id: true,
+      name: true,
+      code: true,
+    },
+  },
+};
+
+const getBartenderScopedWhere = (status, userRole, userId) => {
+  if (userRole !== 'BARTENDER') {
+    return {};
+  }
+
+  if (status === 'PENDING') {
+    return { claimedById: null };
+  }
+
+  if (status === 'IN_PROGRESS') {
+    return {
+      OR: [
+        { claimedById: userId },
+        { claimedById: null },
+      ],
+    };
+  }
+
+  return {};
+};
+
 // Get all orders with filtering
 const getAllOrders = async (req, res, next) => {
   try {
@@ -14,27 +60,12 @@ const getAllOrders = async (req, res, next) => {
       // Customers can only see their own orders
       ...(userRole === 'CUSTOMER' && { customerId: userId }),
       ...(customerId && userRole !== 'CUSTOMER' && { customerId }),
+      ...getBartenderScopedWhere(status, userRole, userId),
     };
 
     const orders = await prisma.order.findMany({
       where,
-      include: {
-        drink: true,
-        customer: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-          },
-        },
-        event: {
-          select: {
-            id: true,
-            name: true,
-            code: true,
-          },
-        },
-      },
+      include: orderInclude,
       orderBy: {
         createdAt: 'desc',
       },
@@ -58,6 +89,13 @@ const getOrderById = async (req, res, next) => {
       include: {
         drink: true,
         customer: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+        claimedBy: {
           select: {
             id: true,
             name: true,
@@ -168,23 +206,7 @@ const createOrder = async (req, res, next) => {
         status: 'PENDING',
         ...(userId && { customerId: userId }),
       },
-      include: {
-        drink: true,
-        event: {
-          select: {
-            id: true,
-            name: true,
-            code: true,
-          },
-        },
-        customer: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-          },
-        },
-      },
+      include: orderInclude,
     });
 
     // Emit real-time event
@@ -214,26 +236,83 @@ const updateOrderStatus = async (req, res, next) => {
       });
     }
 
-    const order = await prisma.order.update({
+    const existingOrder = await prisma.order.findUnique({
       where: { id },
-      data: { status },
-      include: {
-        drink: true,
-        customer: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-          },
+      select: { id: true, status: true, claimedById: true },
+    });
+
+    if (!existingOrder) {
+      return res.status(404).json({ error: 'Order not found' });
+    }
+
+    const userRole = req.user.role;
+    const userId = req.user.userId;
+
+    if (status === 'IN_PROGRESS') {
+      const claimResult = await prisma.order.updateMany({
+        where: {
+          id,
+          claimedById: null,
+          OR: [
+            { status: 'PENDING' },
+            { status: 'IN_PROGRESS' },
+          ],
         },
-        event: {
-          select: {
-            id: true,
-            name: true,
-            code: true,
-          },
+        data: {
+          status: 'IN_PROGRESS',
+          claimedById: userId,
         },
-      },
+      });
+
+      if (claimResult.count === 0) {
+        return res.status(409).json({
+          error: 'Order has already been claimed or cannot be claimed',
+        });
+      }
+    } else if (status === 'PENDING') {
+      if (existingOrder.status !== 'IN_PROGRESS') {
+        return res.status(400).json({
+          error: 'Only in-progress orders can be unclaimed',
+        });
+      }
+
+      if (userRole === 'BARTENDER' && existingOrder.claimedById !== userId) {
+        return res.status(403).json({
+          error: 'Only the bartender who claimed this order can unclaim it',
+        });
+      }
+
+      await prisma.order.update({
+        where: { id },
+        data: {
+          status: 'PENDING',
+          claimedById: null,
+        },
+      });
+    } else {
+      if (userRole === 'BARTENDER') {
+        if (existingOrder.status !== 'IN_PROGRESS') {
+          return res.status(400).json({
+            error: 'Bartenders must claim an order before updating it',
+          });
+        }
+
+        if (existingOrder.claimedById !== userId) {
+          return res.status(403).json({
+            error: 'Only the bartender who claimed this order can update it',
+          });
+        }
+      }
+
+      await prisma.order.update({
+        where: { id },
+        data: { status },
+      });
+    }
+
+    const order = await prisma.order.findUnique({
+      where: { id },
+      include: orderInclude,
     });
 
     // Emit real-time event
@@ -283,23 +362,7 @@ const cancelOrder = async (req, res, next) => {
     const updatedOrder = await prisma.order.update({
       where: { id },
       data: { status: 'CANCELLED' },
-      include: {
-        drink: true,
-        customer: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-          },
-        },
-        event: {
-          select: {
-            id: true,
-            name: true,
-            code: true,
-          },
-        },
-      },
+      include: orderInclude,
     });
 
     // Emit real-time event

@@ -24,8 +24,12 @@ const OrderQueue = ({ orders, token, onOrderUpdate, onOrderClick }) => {
     }
   };
 
-  const handleStartOrder = (orderId) => {
+  const handleClaimOrder = (orderId) => {
     updateOrderStatus(orderId, 'IN_PROGRESS');
+  };
+
+  const handleUnclaimOrder = (orderId) => {
+    updateOrderStatus(orderId, 'PENDING');
   };
 
   const handleCompleteOrder = (orderId) => {
@@ -41,7 +45,7 @@ const OrderQueue = ({ orders, token, onOrderUpdate, onOrderClick }) => {
 
   const handleCardClick = (order) => {
     // Only call the click handler if it exists and order is IN_PROGRESS
-    if (onOrderClick && order.status === 'IN_PROGRESS') {
+    if (onOrderClick && order.status === 'IN_PROGRESS' && order.claimedById) {
       onOrderClick(order);
     }
   };
@@ -61,7 +65,7 @@ const OrderQueue = ({ orders, token, onOrderUpdate, onOrderClick }) => {
         <div
           key={order.id}
           className={`order-card ${order.status.toLowerCase()} ${
-            order.status === 'IN_PROGRESS' ? 'clickable' : ''
+            order.status === 'IN_PROGRESS' && order.claimedById ? 'clickable' : ''
           }`}
           onClick={() => handleCardClick(order)}
         >
@@ -84,6 +88,13 @@ const OrderQueue = ({ orders, token, onOrderUpdate, onOrderClick }) => {
             </span>
           </div>
 
+          {order.claimedBy && (order.status === 'COMPLETED' || order.status === 'IN_PROGRESS') && (
+            <div className="order-notes">
+              <span className="notes-icon">👤</span>
+              <span className="notes-text">Bartender: {order.claimedBy.name}</span>
+            </div>
+          )}
+
           {order.notes && (
             <div className="order-notes">
               <span className="notes-icon">📝</span>
@@ -92,20 +103,20 @@ const OrderQueue = ({ orders, token, onOrderUpdate, onOrderClick }) => {
           )}
 
           <div className="order-actions">
-            {order.status === 'PENDING' && (
+            {(order.status === 'PENDING' || (order.status === 'IN_PROGRESS' && !order.claimedById)) && (
               <button
                 className="btn-start"
                 onClick={(e) => {
                   e.stopPropagation();
-                  handleStartOrder(order.id);
+                  handleClaimOrder(order.id);
                 }}
                 disabled={updating[order.id]}
               >
-                {updating[order.id] ? '⏳' : '▶️ Start'}
+                {updating[order.id] ? '⏳' : '🙋 Claim'}
               </button>
             )}
 
-            {order.status === 'IN_PROGRESS' && (
+            {order.status === 'IN_PROGRESS' && order.claimedById && (
               <>
                 <button
                   className="btn-complete"
@@ -116,6 +127,16 @@ const OrderQueue = ({ orders, token, onOrderUpdate, onOrderClick }) => {
                   disabled={updating[order.id]}
                 >
                   {updating[order.id] ? '⏳' : '✅ Complete'}
+                </button>
+                <button
+                  className="btn-start"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleUnclaimOrder(order.id);
+                  }}
+                  disabled={updating[order.id]}
+                >
+                  ↩️ Unclaim this order
                 </button>
                 <button
                   className="btn-cancel"
@@ -140,7 +161,7 @@ const OrderQueue = ({ orders, token, onOrderUpdate, onOrderClick }) => {
           </div>
 
           {/* Recipe hint for IN_PROGRESS orders */}
-          {order.status === 'IN_PROGRESS' && (
+          {order.status === 'IN_PROGRESS' && order.claimedById && (
             <div className="recipe-hint">
               👆 Click for recipe details
             </div>
