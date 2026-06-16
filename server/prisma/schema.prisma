@@ -22,6 +22,7 @@ model User {
   // Relations
   events    Event[]
   orders    Order[]
+  claimedOrders Order[] @relation("OrderClaimedBy")
   
   @@map("users")
 }
@@ -148,11 +149,14 @@ model Order {
   // Relations
   customerId    String?
   customer      User?       @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  claimedById   String?
+  claimedBy     User?       @relation("OrderClaimedBy", fields: [claimedById], references: [id], onDelete: SetNull)
   eventId       String
   event         Event       @relation(fields: [eventId], references: [id], onDelete: Cascade)
   drinkId       String
   drink         Drink       @relation(fields: [drinkId], references: [id], onDelete: Cascade)
   
+  @@index([status, claimedById])
   @@map("orders")
 }
 

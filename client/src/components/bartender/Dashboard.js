@@ -122,12 +122,26 @@ const Dashboard = () => {
     }
   };
 
-  const filteredOrders = orders.filter((order) =>
-    filter === 'ALL' ? true : order.status === filter
-  );
+  const isVisibleForFilter = (order, selectedFilter) => {
+    if (selectedFilter === 'ALL' || selectedFilter === 'COMPLETED') {
+      return selectedFilter === 'ALL' || order.status === 'COMPLETED';
+    }
 
-  const pendingCount = orders.filter((o) => o.status === 'PENDING').length;
-  const inProgressCount = orders.filter((o) => o.status === 'IN_PROGRESS').length;
+    if (selectedFilter === 'PENDING') {
+      return order.status === 'PENDING' && !order.claimedById;
+    }
+
+    if (selectedFilter === 'IN_PROGRESS') {
+      return order.status === 'IN_PROGRESS' && order.claimedById === user?.id;
+    }
+
+    return order.status === selectedFilter;
+  };
+
+  const filteredOrders = orders.filter((order) => isVisibleForFilter(order, filter));
+
+  const pendingCount = orders.filter((o) => isVisibleForFilter(o, 'PENDING')).length;
+  const inProgressCount = orders.filter((o) => isVisibleForFilter(o, 'IN_PROGRESS')).length;
 
   return (
     <div className="dashboard">

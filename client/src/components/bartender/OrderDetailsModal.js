@@ -10,6 +10,7 @@ const OrderDetailsModal = ({ order, onClose, allOrders, onComplete }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [completing, setCompleting] = useState(false);
+  const [unclaiming, setUnclaiming] = useState(false);
 
   useEffect(() => {
     loadDrinkDetails();
@@ -30,7 +31,7 @@ const OrderDetailsModal = ({ order, onClose, allOrders, onComplete }) => {
       setLoading(false);
     }
   };
-  
+
   const handleCompleteOrder = async () => {
     setCompleting(true);
     try {
@@ -39,12 +40,12 @@ const OrderDetailsModal = ({ order, onClose, allOrders, onComplete }) => {
         { status: 'COMPLETED' },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      
+
       // Call the completion callback if provided
       if (onComplete) {
         onComplete();
       }
-      
+
       // Close the modal
       onClose();
     } catch (err) {
@@ -55,12 +56,35 @@ const OrderDetailsModal = ({ order, onClose, allOrders, onComplete }) => {
     }
   };
 
+
+  const handleUnclaimOrder = async () => {
+    setUnclaiming(true);
+    try {
+      await axios.put(
+        `${API_URL}/api/orders/${order.id}/status`,
+        { status: 'PENDING' },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      if (onComplete) {
+        onComplete();
+      }
+
+      onClose();
+    } catch (err) {
+      console.error('Failed to unclaim order:', err);
+      alert('Failed to unclaim order: ' + (err.response?.data?.error || err.message));
+    } finally {
+      setUnclaiming(false);
+    }
+  };
+
   // Calculate total quantity of this drink in queue (IN_PROGRESS status)
   const calculateTotalQuantity = () => {
     if (!allOrders) return order.quantity;
-    
+
     return allOrders
-      .filter(o => o.drinkId === order.drinkId && o.status === 'IN_PROGRESS')
+      .filter(o => o.drinkId === order.drinkId && o.status === 'IN_PROGRESS' && o.claimedById === order.claimedById)
       .reduce((sum, o) => sum + o.quantity, 0);
   };
 
@@ -69,7 +93,7 @@ const OrderDetailsModal = ({ order, onClose, allOrders, onComplete }) => {
   // Scale ingredients based on total quantity
   const getScaledIngredients = () => {
     if (!drinkDetails?.ingredients) return [];
-    
+
     return drinkDetails.ingredients.map(di => ({
       ...di,
       scaledQuantity: (di.quantity * totalQuantity).toFixed(2)
@@ -118,14 +142,14 @@ const OrderDetailsModal = ({ order, onClose, allOrders, onComplete }) => {
               <h2 className="text-3xl font-bold mb-1">{drinkDetails.name}</h2>
               <p className="text-purple-100">Order ID: {order.id.substring(0, 8)}</p>
             </div>
-            <button 
-              onClick={onClose} 
+            <button
+              onClick={onClose}
               className="text-white hover:text-gray-200 text-3xl leading-none"
             >
               ×
             </button>
           </div>
-          
+
           <div className="flex items-center space-x-4 text-sm">
             <div className="bg-white bg-opacity-20 px-3 py-1 rounded">
               This Order: <strong>{order.quantity}x</strong>
@@ -205,8 +229,8 @@ const OrderDetailsModal = ({ order, onClose, allOrders, onComplete }) => {
               </h3>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                 {drinkDetails.equipment.map((de) => (
-                  <div 
-                    key={de.id} 
+                  <div
+                    key={de.id}
                     className="p-3 bg-orange-50 border border-orange-200 rounded-lg text-center"
                   >
                     <p className="font-semibold text-orange-900">{de.equipment.name}</p>
@@ -227,8 +251,8 @@ const OrderDetailsModal = ({ order, onClose, allOrders, onComplete }) => {
               </h3>
               <div className="space-y-3">
                 {drinkDetails.instructions.map((inst) => (
-                  <div 
-                    key={inst.id} 
+                  <div
+                    key={inst.id}
                     className="flex items-start space-x-3 p-4 bg-green-50 border border-green-200 rounded-lg"
                   >
                     <div className="flex-shrink-0 w-8 h-8 bg-green-600 text-white rounded-full flex items-center justify-center font-bold">
@@ -264,15 +288,24 @@ const OrderDetailsModal = ({ order, onClose, allOrders, onComplete }) => {
           <div className="flex space-x-3">
             <button
               onClick={onClose}
-              disabled={completing}
+              disabled={completing || unclaiming}
               className="flex-1 px-6 py-3 bg-gray-600 hover:bg-gray-700 text-white rounded-lg font-medium text-lg transition disabled:opacity-50"
             >
               Close Recipe
             </button>
             {order.status === 'IN_PROGRESS' && (
               <button
+                onClick={handleUnclaimOrder}
+                disabled={completing || unclaiming}
+                className="flex-1 px-6 py-3 bg-yellow-600 hover:bg-yellow-700 text-white rounded-lg font-medium text-lg transition disabled:opacity-50"
+              >
+                {unclaiming ? '⏳ Unclaiming...' : '↩️ Unclaim this order'}
+              </button>
+            )}
+            {order.status === 'IN_PROGRESS' && (
+              <button
                 onClick={handleCompleteOrder}
-                disabled={completing}
+                disabled={completing || unclaiming}
                 className="flex-1 px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium text-lg transition disabled:opacity-50"
               >
                 {completing ? '⏳ Completing...' : '✅ Close and Mark Complete'}
