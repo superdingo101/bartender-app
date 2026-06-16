@@ -26,16 +26,6 @@ const Login = () => {
     }
   };
 
-  const fillBartender = () => {
-    setEmail('bartender@bartending.app');
-    setPassword('bartender123');
-  };
-
-  const fillAdmin = () => {
-    setEmail('admin@bartending.app');
-    setPassword('admin123');
-  };
-
   return (
     <div className="login-page">
       <div className="login-container">
@@ -83,18 +73,6 @@ const Login = () => {
             {loading ? 'Signing in...' : 'Sign In'}
           </button>
         </form>
-
-        <div className="quick-login">
-          <p>Quick login (for testing):</p>
-          <div className="quick-buttons">
-            <button onClick={fillBartender} className="quick-btn">
-              👨‍🍳 Bartender
-            </button>
-            <button onClick={fillAdmin} className="quick-btn">
-              👑 Admin
-            </button>
-          </div>
-        </div>
       </div>
     </div>
   );

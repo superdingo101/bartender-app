@@ -107,7 +107,7 @@ const EventCodeEntry = ({ onEventFound }) => {
               type="text"
               value={code}
               onChange={(e) => setCode(e.target.value.toUpperCase())}
-              placeholder="Enter event code (e.g., SUMMER2024)"
+              placeholder="Enter event code (e.g., SUMMER2026)"
               maxLength={20}
               disabled={loading}
               className="code-input"
