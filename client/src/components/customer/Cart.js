@@ -21,7 +21,7 @@ const Cart = ({ cart, event, onClose, onOrderPlaced, hidePrices }) => {
   const handleCustomerNameChange = (e) => {
     const newName = e.target.value;
     setCustomerName(newName);
-    
+
     if (newName.trim()) {
       localStorage.setItem(CUSTOMER_NAME_KEY, newName.trim());
     }
@@ -62,7 +62,7 @@ const Cart = ({ cart, event, onClose, onOrderPlaced, hidePrices }) => {
       if (onOrderPlaced) {
         onOrderPlaced(orders);
       }
-      
+
       setNotes('');
       onClose();
     } catch (err) {
@@ -71,6 +71,12 @@ const Cart = ({ cart, event, onClose, onOrderPlaced, hidePrices }) => {
       setLoading(false);
     }
   };
+
+  const checkoutLabel = loading
+    ? 'Placing Order...'
+    : hidePrices
+      ? 'Place Order Now'
+      : `Place Order Now - $${cart.total.toFixed(2)}`;
 
   return (
     <div className="cart-overlay" onClick={onClose}>
@@ -164,12 +170,19 @@ const Cart = ({ cart, event, onClose, onOrderPlaced, hidePrices }) => {
                 </div>
               )}
 
+              <div className="checkout-callout" role="note">
+                <span className="checkout-callout-icon" aria-hidden="true">👇</span>
+                <span>Ready? Tap the button below to send your order to the bar.</span>
+              </div>
+
               <button
                 className="checkout-button"
                 onClick={handleCheckout}
                 disabled={loading || cart.items.length === 0}
+                aria-label={checkoutLabel}
               >
-                {loading ? 'Placing Order...' : hidePrices ? 'Place Order' : `Place Order - $${cart.total.toFixed(2)}`}
+                <span className="checkout-button-icon" aria-hidden="true">🍹</span>
+                <span>{checkoutLabel}</span>
               </button>
             </div>
           </>
