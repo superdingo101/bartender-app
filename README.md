@@ -282,9 +282,9 @@ Events must always have a real owning host user. Before running the demo/content
 Recommended production/demo setup order:
 
 ```bash
-docker-compose exec backend npm run prisma:deploy
-docker-compose exec backend npm run user:create -- --email you@example.com --name "Your Name" --role ADMIN
-docker-compose exec backend sh -c 'DEMO_EVENT_HOST_EMAIL=you@example.com npm run prisma:seed'
+docker compose exec backend npm run prisma:deploy
+docker compose exec backend npm run user:create -- --email you@example.com --name "Your Name" --role ADMIN
+docker compose exec backend sh -c 'DEMO_EVENT_HOST_EMAIL=you@example.com npm run prisma:seed'
 ```
 
 The user creation and password update commands prompt interactively for the password and confirmation; do not pass production passwords as command-line arguments. Supported roles are `ADMIN`, `BARTENDER`, and `CUSTOMER`. The demo event host must be an `ADMIN` or `BARTENDER`.
@@ -292,10 +292,10 @@ The user creation and password update commands prompt interactively for the pass
 Additional user management commands:
 
 ```bash
-docker-compose exec backend npm run user:list
-docker-compose exec backend npm run user:password -- --email you@example.com
-docker-compose exec backend npm run user:role -- --email you@example.com --role BARTENDER
-docker-compose exec backend npm run user:delete -- --email you@example.com
+docker compose exec backend npm run user:list
+docker compose exec backend npm run user:password -- --email you@example.com
+docker compose exec backend npm run user:role -- --email you@example.com --role BARTENDER
+docker compose exec backend npm run user:delete -- --email you@example.com
 ```
 
 The delete command requires typing the target email address to confirm deletion.
