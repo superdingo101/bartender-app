@@ -1,18 +1,18 @@
 import React from 'react';
 import './DrinkCard.css';
 
-const DrinkCard = ({ eventDrink, onAddToCart, hidePrices }) => {
+const DrinkCard = ({ eventDrink, onAddToCart, hidePrices, menuOnly }) => {
   const { drink, price, available } = eventDrink;
 
   // Safely get categories
   const allCategories = drink?.categories?.map(dc => dc.category).filter(Boolean) || [];
   const primaryCategory = drink?.categories?.find(dc => dc.isPrimary)?.category || allCategories[0];
-  
+
   // Fallback icon if no category
   const drinkIcon = primaryCategory?.icon || '🍹';
 
   const handleAddToCart = () => {
-    if (available) {
+    if (available && !menuOnly) {
       onAddToCart(drink, price);
     }
   };
@@ -51,13 +51,17 @@ const DrinkCard = ({ eventDrink, onAddToCart, hidePrices }) => {
 
       <div className="drink-footer">
         {!hidePrices && <div className="drink-price">${price.toFixed(2)}</div>}
-        <button
-          className="add-button"
-          onClick={handleAddToCart}
-          disabled={!available}
-        >
-          {available ? '+ Add' : 'Unavailable'}
-        </button>
+        {menuOnly ? (
+          <span className="menu-only-label">Menu Item</span>
+        ) : (
+          <button
+            className="add-button"
+            onClick={handleAddToCart}
+            disabled={!available}
+          >
+            {available ? '+ Add' : 'Unavailable'}
+          </button>
+        )}
       </div>
     </div>
   );

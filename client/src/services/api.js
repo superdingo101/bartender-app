@@ -29,6 +29,8 @@ export const checkHealth = () => apiCall('/health');
 // Event endpoints
 export const getEventByCode = (code) => apiCall(`/api/events/code/${code}`);
 
+export const getEventMenu = (id) => apiCall(`/api/events/${id}/menu`);
+
 export const getEventById = (id, token) =>
   apiCall(`/api/events/${id}`, {
     headers: { Authorization: `Bearer ${token}` },
@@ -89,6 +91,7 @@ export const register = (userData) =>
 export default {
   checkHealth,
   getEventByCode,
+  getEventMenu,
   getEventById,
   getAllDrinks,
   getDrinksByCategory,

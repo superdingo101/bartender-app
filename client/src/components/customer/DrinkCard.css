@@ -181,3 +181,11 @@
     font-size: 0.8rem;
   }
 }
+.menu-only-label {
+  padding: 0.625rem 1rem;
+  background: #e0f2fe;
+  color: #0369a1;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.875rem;
+}
