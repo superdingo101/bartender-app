@@ -9,6 +9,7 @@ router.get('/code/:code', eventsController.getEventByCode);
 router.get('/:id/menu', eventsController.getEventMenu);
 
 // Protected routes - all users
+router.get('/availability/code', authenticate, eventsController.checkEventCodeAvailability);
 router.get('/', authenticate, eventsController.getAllEvents);
 router.get('/:id', authenticate, eventsController.getEventById);
 
@@ -17,21 +18,21 @@ router.post(
   '/',
   authenticate,
   authorize('BARTENDER', 'ADMIN'),
-  eventsController.createEvent
+  eventsController.createEvent,
 );
 
 router.put(
   '/:id',
   authenticate,
   authorize('BARTENDER', 'ADMIN'),
-  eventsController.updateEvent
+  eventsController.updateEvent,
 );
 
 router.delete(
   '/:id',
   authenticate,
   authorize('BARTENDER', 'ADMIN'),
-  eventsController.deleteEvent
+  eventsController.deleteEvent,
 );
 
 // Event drinks management
@@ -39,21 +40,21 @@ router.post(
   '/:id/drinks',
   authenticate,
   authorize('BARTENDER', 'ADMIN'),
-  eventsController.addDrinkToEvent
+  eventsController.addDrinkToEvent,
 );
 
 router.delete(
   '/:id/drinks/:drinkId',
   authenticate,
   authorize('BARTENDER', 'ADMIN'),
-  eventsController.removeDrinkFromEvent
+  eventsController.removeDrinkFromEvent,
 );
 
 router.put(
   '/:id/drinks/:drinkId',
   authenticate,
   authorize('BARTENDER', 'ADMIN'),
-  eventsController.updateEventDrink
+  eventsController.updateEventDrink,
 );
 
 module.exports = router;

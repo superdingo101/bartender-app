@@ -1,15 +1,15 @@
 const { prisma } = require('../services/database');
 const { emitEventStatusUpdate, emitDrinkAvailabilityUpdate } = require('../services/socket');
 
-// Generate unique event code
-const generateEventCode = () => {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-  let code = '';
-  for (let i = 0; i < 8; i++) {
-    code += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return code;
-};
+// Normalize manually-entered event codes to URL-safe uppercase values
+const EVENT_CODE_MAX_LENGTH = 20;
+
+const normalizeEventCode = (code) => (code || '')
+  .trim()
+  .toUpperCase()
+  .replace(/[^A-Z0-9]+/g, '-')
+  .replace(/^-+|-+$/g, '')
+  .slice(0, EVENT_CODE_MAX_LENGTH);
 
 // Get all events (with filters)
 const getAllEvents = async (req, res, next) => {
@@ -175,26 +175,59 @@ const getEventMenu = async (req, res, next) => {
   }
 };
 
-// Create new event
-const createEvent = async (req, res, next) => {
+// Check if an event code is available
+const checkEventCodeAvailability = async (req, res, next) => {
   try {
-    const { name, description, date, location, status, hidePrices } = req.body;
-    const hostId = req.user.userId;
+    const code = normalizeEventCode(req.query.code);
 
-    // Validate required fields
-    if (!name || !date || !location) {
+    if (!code) {
       return res.status(400).json({
-        error: 'Name, date, and location are required',
+        error: 'Event code is required',
+        available: false,
+        code,
       });
     }
 
-    // Generate unique code
-    let code = generateEventCode();
-    let codeExists = await prisma.event.findUnique({ where: { code } });
-    
-    while (codeExists) {
-      code = generateEventCode();
-      codeExists = await prisma.event.findUnique({ where: { code } });
+    const existingEvent = await prisma.event.findUnique({ where: { code } });
+
+    res.json({
+      available: !existingEvent,
+      code,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Create new event
+const createEvent = async (req, res, next) => {
+  try {
+    const {
+      name, description, date, location, status, hidePrices, code: requestedCode,
+    } = req.body;
+    const hostId = req.user.userId;
+
+    // Validate required fields
+    if (!name || !date || !location || !requestedCode) {
+      return res.status(400).json({
+        error: 'Name, date, location, and event code are required',
+      });
+    }
+
+    const code = normalizeEventCode(requestedCode);
+
+    if (!code) {
+      return res.status(400).json({
+        error: 'Event code must contain at least one letter or number',
+      });
+    }
+
+    const codeExists = await prisma.event.findUnique({ where: { code } });
+
+    if (codeExists) {
+      return res.status(409).json({
+        error: 'Event code is already in use',
+      });
     }
 
     const event = await prisma.event.create({
@@ -224,6 +257,11 @@ const createEvent = async (req, res, next) => {
       event,
     });
   } catch (error) {
+    if (error.code === 'P2002') {
+      return res.status(409).json({
+        error: 'Event code is already in use',
+      });
+    }
     next(error);
   }
 };
@@ -232,8 +270,10 @@ const createEvent = async (req, res, next) => {
 const updateEvent = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { name, description, date, location, status, hidePrices } = req.body;
-    const userId = req.user.userId;
+    const {
+      name, description, date, location, status, hidePrices,
+    } = req.body;
+    const { userId } = req.user;
     const userRole = req.user.role;
 
     // Check if event exists
@@ -247,8 +287,8 @@ const updateEvent = async (req, res, next) => {
 
     // Check authorization (only host or admin can update)
     if (existingEvent.hostId !== userId && userRole !== 'ADMIN') {
-      return res.status(403).json({ 
-        error: 'You do not have permission to update this event' 
+      return res.status(403).json({
+        error: 'You do not have permission to update this event',
       });
     }
 
@@ -291,7 +331,7 @@ const updateEvent = async (req, res, next) => {
 const deleteEvent = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const userId = req.user.userId;
+    const { userId } = req.user;
     const userRole = req.user.role;
 
     // Check if event exists
@@ -305,8 +345,8 @@ const deleteEvent = async (req, res, next) => {
 
     // Check authorization
     if (event.hostId !== userId && userRole !== 'ADMIN') {
-      return res.status(403).json({ 
-        error: 'You do not have permission to delete this event' 
+      return res.status(403).json({
+        error: 'You do not have permission to delete this event',
       });
     }
 
@@ -428,6 +468,7 @@ module.exports = {
   getEventById,
   getEventByCode,
   getEventMenu,
+  checkEventCodeAvailability,
   createEvent,
   updateEvent,
   deleteEvent,

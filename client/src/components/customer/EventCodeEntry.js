@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { getEventByCode } from '../../services/api';
 import './EventCodeEntry.css';
 
+const EVENT_CODE_MAX_LENGTH = 20;
+
 const EventCodeEntry = ({ onEventFound }) => {
   const [code, setCode] = useState('');
   const [loading, setLoading] = useState(false);
@@ -108,7 +110,7 @@ const EventCodeEntry = ({ onEventFound }) => {
               value={code}
               onChange={(e) => setCode(e.target.value.toUpperCase())}
               placeholder="Enter event code (e.g., SUMMER2026)"
-              maxLength={20}
+              maxLength={EVENT_CODE_MAX_LENGTH}
               disabled={loading}
               className="code-input"
               autoFocus
