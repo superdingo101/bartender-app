@@ -1,28 +1,95 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useAuth } from '../../context/AuthContext';
 
 import API_URL from '../../config/api';
 
+const normalizeEventCode = (value) => (value || '')
+  .trim()
+  .toUpperCase()
+  .replace(/[^A-Z0-9]+/g, '-')
+  .replace(/^-+|-+$/g, '')
+  .slice(0, 32);
+
 const EventModal = ({ event, onClose, onSave }) => {
   const { token } = useAuth();
   const [formData, setFormData] = useState({
     name: event?.name || '',
+    code: event?.code || '',
     description: event?.description || '',
     date: event?.date ? new Date(event.date).toISOString().slice(0, 16) : '',
     location: event?.location || '',
     status: event?.status || 'UPCOMING',
     hidePrices: event?.hidePrices || false
   });
+  const [codeEdited, setCodeEdited] = useState(Boolean(event?.code));
+  const [codeStatus, setCodeStatus] = useState({ state: event ? 'available' : 'idle', message: '' });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+
+  useEffect(() => {
+    if (!event && !codeEdited) {
+      setFormData((current) => ({
+        ...current,
+        code: normalizeEventCode(current.name)
+      }));
+    }
+  }, [event, codeEdited, formData.name]);
+
+  useEffect(() => {
+    if (event) {
+      return undefined;
+    }
+
+    const code = normalizeEventCode(formData.code);
+
+    if (!code) {
+      setCodeStatus({ state: 'idle', message: 'Enter an event code.' });
+      return undefined;
+    }
+
+    setCodeStatus({ state: 'checking', message: 'Checking availability...' });
+
+    const timeoutId = setTimeout(async () => {
+      try {
+        const response = await axios.get(`${API_URL}/api/events/availability/code`, {
+          params: { code },
+          headers: { Authorization: `Bearer ${token}` }
+        });
+
+        setCodeStatus({
+          state: response.data.available ? 'available' : 'unavailable',
+          message: response.data.available ? 'Event code is available.' : 'Event code is already in use.'
+        });
+      } catch (err) {
+        setCodeStatus({
+          state: 'unavailable',
+          message: err.response?.data?.error || 'Unable to check event code availability.'
+        });
+      }
+    }, 300);
+
+    return () => clearTimeout(timeoutId);
+  }, [event, formData.code, token]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(null);
 
+    const normalizedCode = normalizeEventCode(formData.code);
+
     if (!formData.name || formData.name.trim().length === 0) {
       setError('Event name is required');
+      return;
+    }
+
+    if (!event && !normalizedCode) {
+      setError('Event code is required');
+      return;
+    }
+
+    if (!event && codeStatus.state !== 'available') {
+      setError('Please choose an available event code');
       return;
     }
 
@@ -48,6 +115,10 @@ const EventModal = ({ event, onClose, onSave }) => {
         hidePrices: formData.hidePrices
       };
 
+      if (!event) {
+        payload.code = normalizedCode;
+      }
+
       if (event) {
         await axios.put(
           `${API_URL}/api/events/${event.id}`,
@@ -69,6 +140,8 @@ const EventModal = ({ event, onClose, onSave }) => {
       setLoading(false);
     }
   };
+
+  const isCodeUnavailable = !event && codeStatus.state !== 'available';
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
@@ -95,6 +168,35 @@ const EventModal = ({ event, onClose, onSave }) => {
                 required
               />
             </div>
+
+            {!event && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Event Code *</label>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="text"
+                    value={formData.code}
+                    onChange={(e) => {
+                      setCodeEdited(true);
+                      setFormData({ ...formData, code: normalizeEventCode(e.target.value) });
+                    }}
+                    placeholder="e.g., SUMMER-PARTY"
+                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    required
+                  />
+                  <span
+                    className={`text-2xl ${codeStatus.state === 'available' ? 'text-green-600' : 'text-red-600'}`}
+                    aria-label={codeStatus.state === 'available' ? 'Event code available' : 'Event code unavailable'}
+                    title={codeStatus.message}
+                  >
+                    {codeStatus.state === 'available' ? '✓' : '✕'}
+                  </span>
+                </div>
+                <p className={`mt-1 text-sm ${codeStatus.state === 'available' ? 'text-green-700' : 'text-red-700'}`}>
+                  {codeStatus.message || 'Event codes may contain letters, numbers, and hyphens.'}
+                </p>
+              </div>
+            )}
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
@@ -129,7 +231,6 @@ const EventModal = ({ event, onClose, onSave }) => {
                 required
               />
             </div>
-
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
               <select
@@ -160,12 +261,6 @@ const EventModal = ({ event, onClose, onSave }) => {
               </label>
             </div>
 
-            {!event && (
-              <div className="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded-lg text-sm">
-                ℹ️ A unique event code will be automatically generated for customer access.
-              </div>
-            )}
-
             {error && (
               <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
                 ❌ {error}
@@ -182,7 +277,7 @@ const EventModal = ({ event, onClose, onSave }) => {
               </button>
               <button
                 type="submit"
-                disabled={loading || !formData.name.trim() || !formData.date || !formData.location.trim()}
+                disabled={loading || !formData.name.trim() || !formData.date || !formData.location.trim() || isCodeUnavailable}
                 className="flex-1 px-6 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium disabled:opacity-50 transition"
               >
                 {loading ? 'Saving...' : (event ? 'Update Event' : 'Create Event')}
