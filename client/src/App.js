@@ -15,6 +15,7 @@ import AdminPage from './components/admin/AdminPage';
 import IngredientsPage from './components/bartender/IngredientsPage';
 import ResourcesPage from './components/bartender/ResourcesPage';
 import BartenderAdminPage from './components/bartender/BartenderAdminPage';
+import ReportsPage from './components/bartender/ReportsPage';
 
 function CustomerApp() {
   const [event, setEvent] = useState(null);
@@ -212,6 +213,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <ResourcesPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/bartender/reports"
+              element={
+                <ProtectedRoute>
+                  <ReportsPage />
                 </ProtectedRoute>
               }
             />

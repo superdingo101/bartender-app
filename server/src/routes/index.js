@@ -8,6 +8,7 @@ const adminRoutes = require('./admin.routes');
 const ingredientsRoutes = require('./ingredients.routes');
 const glassTypesRoutes = require('./glassTypes.routes');
 const equipmentRoutes = require('./equipment.routes');
+const reportsRoutes = require('./reports.routes');
 
 module.exports = (app) => {
   // Health check routes
@@ -34,5 +35,6 @@ module.exports = (app) => {
   app.use('/api/ingredients', ingredientsRoutes);
   app.use('/api/glass-types', glassTypesRoutes);
   app.use('/api/equipment', equipmentRoutes);
+  app.use('/api/reports', reportsRoutes);
   
 };
