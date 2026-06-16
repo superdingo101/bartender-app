@@ -1,16 +1,47 @@
 import React, { useState, useEffect } from 'react';
+import { getEventMenu } from '../../services/api';
 import DrinkCard from './DrinkCard';
 import Cart from './Cart';
 import './DrinkMenu.css';
 
 const DrinkMenu = ({ event, cart, onAddToCart, socket }) => {
+  const [currentEvent, setCurrentEvent] = useState(event);
   const [drinks, setDrinks] = useState(event.drinks || []);
   const [selectedCategory, setSelectedCategory] = useState('ALL');
   const [showCart, setShowCart] = useState(false);
 
+  useEffect(() => {
+    let isMounted = true;
+
+    const refreshEventMenu = async () => {
+      try {
+        const response = await getEventMenu(event.id);
+        if (!isMounted) {
+          return;
+        }
+
+        setCurrentEvent(response.event);
+        setDrinks(response.event.drinks || response.menu || []);
+        localStorage.setItem('currentEvent', JSON.stringify(response.event));
+      } catch (error) {
+        console.error('Failed to refresh event menu:', error);
+      }
+    };
+
+    if (event?.id) {
+      setCurrentEvent(event);
+      setDrinks(event.drinks || []);
+      refreshEventMenu();
+    }
+
+    return () => {
+      isMounted = false;
+    };
+  }, [event]);
+
   // Check if prices should be hidden
-  const hidePrices = event.hidePrices || false;
-  const menuOnly = event.menuOnly || false;
+  const hidePrices = currentEvent.hidePrices || false;
+  const menuOnly = currentEvent.menuOnly || false;
 
   // Get unique categories from drinks
   const categories = React.useMemo(() => {
@@ -51,6 +82,19 @@ const DrinkMenu = ({ event, cart, onAddToCart, socket }) => {
     console.log(`🎉 Joining event: ${event.id}`);
     socket.emit('join-event', event.id);
 
+    // Listen for event setting updates
+    socket.on('event-status-updated', (updatedEvent) => {
+      console.log(`🎉 Event updated: ${updatedEvent.id}`);
+      setCurrentEvent((prev) => {
+        const mergedEvent = { ...prev, ...updatedEvent };
+        localStorage.setItem('currentEvent', JSON.stringify(mergedEvent));
+        return mergedEvent;
+      });
+      if (updatedEvent.menuOnly) {
+        setShowCart(false);
+      }
+    });
+
     // Listen for drink availability updates
     socket.on('drink-availability-updated', ({ drinkId, available }) => {
       console.log(`🍹 Drink availability updated: ${drinkId} = ${available}`);
@@ -64,6 +108,7 @@ const DrinkMenu = ({ event, cart, onAddToCart, socket }) => {
     return () => {
       console.log(`👋 Leaving event: ${event.id}`);
       socket.emit('leave-event', event.id);
+      socket.off('event-status-updated');
       socket.off('drink-availability-updated');
     };
   }, [socket, event]);
@@ -89,10 +134,10 @@ const DrinkMenu = ({ event, cart, onAddToCart, socket }) => {
     <div className="drink-menu">
       <div className="menu-header">
         <div className="event-info">
-          <h1>{event.name}</h1>
-          <p className="event-location">📍 {event.location}</p>
+          <h1>{currentEvent.name}</h1>
+          <p className="event-location">📍 {currentEvent.location}</p>
           <p className="event-date">
-            📅 {new Date(event.date).toLocaleDateString('en-US', {
+            📅 {new Date(currentEvent.date).toLocaleDateString('en-US', {
               weekday: 'long',
               year: 'numeric',
               month: 'long',
@@ -179,7 +224,7 @@ const DrinkMenu = ({ event, cart, onAddToCart, socket }) => {
       {!menuOnly && showCart && (
         <Cart
           cart={cart}
-          event={event}
+          event={currentEvent}
           onClose={() => setShowCart(false)}
           hidePrices={hidePrices}
         />

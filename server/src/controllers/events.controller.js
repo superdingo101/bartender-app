@@ -315,8 +315,12 @@ const updateEvent = async (req, res, next) => {
       },
     });
 
-    // Emit real-time update if status changed
-    if (status && status !== existingEvent.status) {
+    // Emit real-time update if customer-facing event settings changed
+    if (
+      (status && status !== existingEvent.status)
+      || (hidePrices !== undefined && hidePrices !== existingEvent.hidePrices)
+      || (menuOnly !== undefined && menuOnly !== existingEvent.menuOnly)
+    ) {
       emitEventStatusUpdate(updatedEvent);
     }
 

@@ -5,6 +5,7 @@ import {
   getAllDrinks,
   getDrinksByCategory,
   getEventByCode,
+  getEventMenu,
   getEventById,
   getMyOrders,
   getOrderById,
@@ -47,6 +48,7 @@ describe('API service', () => {
   it.each([
     ['checkHealth', () => checkHealth(), '/health'],
     ['getEventByCode', () => getEventByCode('SUMMER26'), '/api/events/code/SUMMER26'],
+    ['getEventMenu', () => getEventMenu('event-1'), '/api/events/event-1/menu'],
     ['getAllDrinks', () => getAllDrinks(), '/api/drinks'],
     ['getDrinksByCategory', () => getDrinksByCategory('classic'), '/api/drinks/category/classic'],
     ['searchDrinks', () => searchDrinks('gin & tonic'), '/api/drinks/search?q=gin%20%26%20tonic'],
