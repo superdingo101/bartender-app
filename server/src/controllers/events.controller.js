@@ -2,12 +2,14 @@ const { prisma } = require('../services/database');
 const { emitEventStatusUpdate, emitDrinkAvailabilityUpdate } = require('../services/socket');
 
 // Normalize manually-entered event codes to URL-safe uppercase values
+const EVENT_CODE_MAX_LENGTH = 20;
+
 const normalizeEventCode = (code) => (code || '')
   .trim()
   .toUpperCase()
   .replace(/[^A-Z0-9]+/g, '-')
   .replace(/^-+|-+$/g, '')
-  .slice(0, 32);
+  .slice(0, EVENT_CODE_MAX_LENGTH);
 
 // Get all events (with filters)
 const getAllEvents = async (req, res, next) => {

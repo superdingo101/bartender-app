@@ -4,12 +4,14 @@ import { useAuth } from '../../context/AuthContext';
 
 import API_URL from '../../config/api';
 
+const EVENT_CODE_MAX_LENGTH = 20;
+
 const normalizeEventCode = (value) => (value || '')
   .trim()
   .toUpperCase()
   .replace(/[^A-Z0-9]+/g, '-')
   .replace(/^-+|-+$/g, '')
-  .slice(0, 32);
+  .slice(0, EVENT_CODE_MAX_LENGTH);
 
 const EventModal = ({ event, onClose, onSave }) => {
   const { token } = useAuth();
@@ -181,6 +183,7 @@ const EventModal = ({ event, onClose, onSave }) => {
                       setFormData({ ...formData, code: normalizeEventCode(e.target.value) });
                     }}
                     placeholder="e.g., SUMMER-PARTY"
+                    maxLength={EVENT_CODE_MAX_LENGTH}
                     className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                     required
                   />
