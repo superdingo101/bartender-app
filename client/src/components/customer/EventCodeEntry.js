@@ -147,8 +147,8 @@ const EventCodeEntry = ({ onEventFound }) => {
           <ol>
             <li>Enter the event code provided by your host</li>
             <li>Browse the drink menu</li>
-            <li>Place your order</li>
-            <li>Track your order in real-time</li>
+            <li>Place your order when ordering is enabled</li>
+            <li>Track your order in real-time when ordering is enabled</li>
           </ol>
         </div>
       </div>

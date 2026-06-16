@@ -10,12 +10,13 @@ const DrinkMenu = ({ event, cart, onAddToCart, socket }) => {
 
   // Check if prices should be hidden
   const hidePrices = event.hidePrices || false;
+  const menuOnly = event.menuOnly || false;
 
   // Get unique categories from drinks
   const categories = React.useMemo(() => {
     const categorySet = new Map();
     categorySet.set('ALL', { name: 'ALL', displayName: 'All Drinks', icon: '🍹' });
-    
+
     drinks.forEach(eventDrink => {
       const drink = eventDrink.drink;
       if (drink?.categories && Array.isArray(drink.categories)) {
@@ -31,7 +32,7 @@ const DrinkMenu = ({ event, cart, onAddToCart, socket }) => {
         });
       }
     });
-    
+
     return Array.from(categorySet.values());
   }, [drinks]);
 
@@ -72,7 +73,7 @@ const DrinkMenu = ({ event, cart, onAddToCart, socket }) => {
     if (selectedCategory === 'ALL') {
       return drinks;
     }
-    
+
     return drinks.filter((eventDrink) => {
       const drink = eventDrink.drink;
       if (!drink?.categories || !Array.isArray(drink.categories)) {
@@ -103,27 +104,34 @@ const DrinkMenu = ({ event, cart, onAddToCart, socket }) => {
               🎁 All drinks complimentary
             </p>
           )}
-        </div>
-        
-        <button 
-          className="cart-button"
-          onClick={() => setShowCart(!showCart)}
-        >
-          🛒 Cart ({cart.itemCount})
-          {cart.itemCount > 0 && (
-            <span className="cart-badge">{cart.itemCount}</span>
+          {menuOnly && (
+            <p className="menu-only-notice">
+              📋 Menu only — ordering is disabled for this event
+            </p>
           )}
-        </button>
+        </div>
+
+        {!menuOnly && (
+          <button
+            className="cart-button"
+            onClick={() => setShowCart(!showCart)}
+          >
+            🛒 Cart ({cart.itemCount})
+            {cart.itemCount > 0 && (
+              <span className="cart-badge">{cart.itemCount}</span>
+            )}
+          </button>
+        )}
       </div>
 
       <div className="category-filter">
         {categories.map((category) => {
-          const count = category.name === 'ALL' 
-            ? drinks.length 
-            : drinks.filter(ed => 
+          const count = category.name === 'ALL'
+            ? drinks.length
+            : drinks.filter(ed =>
                 ed.drink?.categories?.some(dc => dc.category?.name === category.name)
               ).length;
-          
+
           return (
             <button
               key={category.name}
@@ -141,7 +149,7 @@ const DrinkMenu = ({ event, cart, onAddToCart, socket }) => {
           <div className="no-drinks-icon">😔</div>
           <h3>No drinks available</h3>
           <p>
-            {selectedCategory === 'ALL' 
+            {selectedCategory === 'ALL'
               ? 'Check back later for drinks!'
               : `No available drinks in ${categories.find(c => c.name === selectedCategory)?.displayName || 'this category'}`}
           </p>
@@ -162,12 +170,13 @@ const DrinkMenu = ({ event, cart, onAddToCart, socket }) => {
               eventDrink={eventDrink}
               onAddToCart={onAddToCart}
               hidePrices={hidePrices}
+              menuOnly={menuOnly}
             />
           ))}
         </div>
       )}
 
-      {showCart && (
+      {!menuOnly && showCart && (
         <Cart
           cart={cart}
           event={event}

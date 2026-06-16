@@ -99,6 +99,7 @@ async function seedDemoContent(client = prisma, options = {}) {
       location: 'Rooftop Pool, Downtown',
       status: 'UPCOMING',
       hidePrices: false,
+      menuOnly: false,
       hostId: host.id,
     },
     create: {
@@ -109,6 +110,7 @@ async function seedDemoContent(client = prisma, options = {}) {
       code: 'SUMMER2026',
       status: 'UPCOMING',
       hidePrices: false,
+      menuOnly: false,
       hostId: host.id,
     },
   });

@@ -203,7 +203,7 @@ const checkEventCodeAvailability = async (req, res, next) => {
 const createEvent = async (req, res, next) => {
   try {
     const {
-      name, description, date, location, status, hidePrices, code: requestedCode,
+      name, description, date, location, status, hidePrices, menuOnly, code: requestedCode,
     } = req.body;
     const hostId = req.user.userId;
 
@@ -239,6 +239,7 @@ const createEvent = async (req, res, next) => {
         code,
         status: status || 'UPCOMING',
         hidePrices: hidePrices || false,
+        menuOnly: menuOnly || false,
         hostId,
       },
       include: {
@@ -271,7 +272,7 @@ const updateEvent = async (req, res, next) => {
   try {
     const { id } = req.params;
     const {
-      name, description, date, location, status, hidePrices,
+      name, description, date, location, status, hidePrices, menuOnly,
     } = req.body;
     const { userId } = req.user;
     const userRole = req.user.role;
@@ -301,6 +302,7 @@ const updateEvent = async (req, res, next) => {
         ...(location && { location }),
         ...(status && { status }),
         ...(hidePrices !== undefined && { hidePrices }),
+        ...(menuOnly !== undefined && { menuOnly }),
       },
       include: {
         host: {

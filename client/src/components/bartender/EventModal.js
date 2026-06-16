@@ -22,7 +22,8 @@ const EventModal = ({ event, onClose, onSave }) => {
     date: event?.date ? new Date(event.date).toISOString().slice(0, 16) : '',
     location: event?.location || '',
     status: event?.status || 'UPCOMING',
-    hidePrices: event?.hidePrices || false
+    hidePrices: event?.hidePrices || false,
+    menuOnly: event?.menuOnly || false
   });
   const [codeEdited, setCodeEdited] = useState(Boolean(event?.code));
   const [codeStatus, setCodeStatus] = useState({ state: event ? 'available' : 'idle', message: '' });
@@ -114,7 +115,8 @@ const EventModal = ({ event, onClose, onSave }) => {
         date: new Date(formData.date).toISOString(),
         location: formData.location.trim(),
         status: formData.status,
-        hidePrices: formData.hidePrices
+        hidePrices: formData.hidePrices,
+        menuOnly: formData.menuOnly
       };
 
       if (!event) {
@@ -260,6 +262,22 @@ const EventModal = ({ event, onClose, onSave }) => {
                 <div className="font-medium text-gray-900">🎁 Hide All Prices</div>
                 <div className="text-sm text-gray-600">
                   Enable this for events with complimentary drinks (weddings, corporate events, etc.)
+                </div>
+              </label>
+            </div>
+
+            <div className="flex items-center space-x-3 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <input
+                type="checkbox"
+                id="menuOnly"
+                checked={formData.menuOnly}
+                onChange={(e) => setFormData({ ...formData, menuOnly: e.target.checked })}
+                className="w-5 h-5 text-purple-600 rounded"
+              />
+              <label htmlFor="menuOnly" className="flex-1 cursor-pointer">
+                <div className="font-medium text-gray-900">📋 Menu Only Mode</div>
+                <div className="text-sm text-gray-600">
+                  Show the customer app as a browsable menu without add-to-cart or place-order options.
                 </div>
               </label>
             </div>

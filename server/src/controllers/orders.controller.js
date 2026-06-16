@@ -169,6 +169,12 @@ const createOrder = async (req, res, next) => {
       });
     }
 
+    if (event.menuOnly) {
+      return res.status(400).json({
+        error: 'Ordering is disabled for this event',
+      });
+    }
+
     // Check if drink is available at this event
     const eventDrink = await prisma.eventDrink.findUnique({
       where: {
