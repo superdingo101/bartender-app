@@ -272,3 +272,32 @@ CLIENT_URL=https://bartender.example.com
 ```
 
 If the API is intentionally hosted on a different public HTTPS origin, set `REACT_APP_API_URL=https://api.example.com` at frontend build time and include the frontend origin in `CORS_ORIGIN` or `CLIENT_URL`.
+
+## 🔐 Production seeding and user credentials
+
+The backend seed command is safe to run in production because it creates only non-sensitive demo/catalog data: drink categories, sample drinks, sample ingredients, the `SUMMER2026` demo event, and the event drink price/availability links. It does **not** create admin, bartender, customer, or any other login credentials.
+
+Run the demo/content seed from inside the backend container:
+
+```bash
+docker-compose exec backend npm run prisma:seed
+```
+
+Create production users intentionally from inside the backend container. For the first administrator, run:
+
+```bash
+docker-compose exec backend npm run user:create -- --email you@example.com --name "Your Name" --role ADMIN
+```
+
+The user creation and password update commands prompt interactively for the password and confirmation; do not pass production passwords as command-line arguments. Supported roles are `ADMIN`, `BARTENDER`, and `CUSTOMER`.
+
+Additional user management commands:
+
+```bash
+docker-compose exec backend npm run user:list
+docker-compose exec backend npm run user:password -- --email you@example.com
+docker-compose exec backend npm run user:role -- --email you@example.com --role BARTENDER
+docker-compose exec backend npm run user:delete -- --email you@example.com
+```
+
+Never expose known/default credentials in production. If older deployments contain public demo users such as `admin@bartending.app` or `bartender@bartending.app`, delete them or rotate their passwords before exposing the app.

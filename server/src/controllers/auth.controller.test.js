@@ -33,17 +33,26 @@ describe('Auth Controller', () => {
 
   describe('POST /api/auth/login', () => {
     it('should login with valid credentials', async () => {
-      // Use seeded bartender account
+      const userData = {
+        email: `login${Date.now()}@example.com`,
+        password: 'password123',
+        name: 'Login User',
+      };
+
+      await request(app)
+        .post('/api/auth/register')
+        .send(userData);
+
       const response = await request(app)
         .post('/api/auth/login')
         .send({
-          email: 'bartender@bartending.app',
-          password: 'bartender123',
+          email: userData.email,
+          password: userData.password,
         });
 
       expect(response.status).toBe(200);
       expect(response.body).toHaveProperty('token');
-      expect(response.body.user.email).toBe('bartender@bartending.app');
+      expect(response.body.user.email).toBe(userData.email);
     });
 
     it('should fail with invalid credentials', async () => {
