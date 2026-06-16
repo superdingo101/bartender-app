@@ -36,7 +36,12 @@ const getBartenderScopedWhere = (status, userRole, userId) => {
   }
 
   if (status === 'IN_PROGRESS') {
-    return { claimedById: userId };
+    return {
+      OR: [
+        { claimedById: userId },
+        { claimedById: null },
+      ],
+    };
   }
 
   return {};
@@ -247,8 +252,11 @@ const updateOrderStatus = async (req, res, next) => {
       const claimResult = await prisma.order.updateMany({
         where: {
           id,
-          status: 'PENDING',
           claimedById: null,
+          OR: [
+            { status: 'PENDING' },
+            { status: 'IN_PROGRESS' },
+          ],
         },
         data: {
           status: 'IN_PROGRESS',
@@ -258,7 +266,7 @@ const updateOrderStatus = async (req, res, next) => {
 
       if (claimResult.count === 0) {
         return res.status(409).json({
-          error: 'Order has already been claimed or is no longer pending',
+          error: 'Order has already been claimed or cannot be claimed',
         });
       }
     } else if (status === 'PENDING') {
@@ -282,10 +290,18 @@ const updateOrderStatus = async (req, res, next) => {
         },
       });
     } else {
-      if (userRole === 'BARTENDER' && existingOrder.status === 'IN_PROGRESS' && existingOrder.claimedById !== userId) {
-        return res.status(403).json({
-          error: 'Only the bartender who claimed this order can update it',
-        });
+      if (userRole === 'BARTENDER') {
+        if (existingOrder.status !== 'IN_PROGRESS') {
+          return res.status(400).json({
+            error: 'Bartenders must claim an order before updating it',
+          });
+        }
+
+        if (existingOrder.claimedById !== userId) {
+          return res.status(403).json({
+            error: 'Only the bartender who claimed this order can update it',
+          });
+        }
       }
 
       await prisma.order.update({

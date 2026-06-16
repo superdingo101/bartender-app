@@ -132,7 +132,7 @@ const Dashboard = () => {
     }
 
     if (selectedFilter === 'IN_PROGRESS') {
-      return order.status === 'IN_PROGRESS' && order.claimedById === user?.id;
+      return order.status === 'IN_PROGRESS' && (!order.claimedById || order.claimedById === user?.id);
     }
 
     return order.status === selectedFilter;

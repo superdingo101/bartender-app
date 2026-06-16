@@ -45,7 +45,7 @@ const OrderQueue = ({ orders, token, onOrderUpdate, onOrderClick }) => {
 
   const handleCardClick = (order) => {
     // Only call the click handler if it exists and order is IN_PROGRESS
-    if (onOrderClick && order.status === 'IN_PROGRESS') {
+    if (onOrderClick && order.status === 'IN_PROGRESS' && order.claimedById) {
       onOrderClick(order);
     }
   };
@@ -65,7 +65,7 @@ const OrderQueue = ({ orders, token, onOrderUpdate, onOrderClick }) => {
         <div
           key={order.id}
           className={`order-card ${order.status.toLowerCase()} ${
-            order.status === 'IN_PROGRESS' ? 'clickable' : ''
+            order.status === 'IN_PROGRESS' && order.claimedById ? 'clickable' : ''
           }`}
           onClick={() => handleCardClick(order)}
         >
@@ -103,7 +103,7 @@ const OrderQueue = ({ orders, token, onOrderUpdate, onOrderClick }) => {
           )}
 
           <div className="order-actions">
-            {order.status === 'PENDING' && (
+            {(order.status === 'PENDING' || (order.status === 'IN_PROGRESS' && !order.claimedById)) && (
               <button
                 className="btn-start"
                 onClick={(e) => {
@@ -116,7 +116,7 @@ const OrderQueue = ({ orders, token, onOrderUpdate, onOrderClick }) => {
               </button>
             )}
 
-            {order.status === 'IN_PROGRESS' && (
+            {order.status === 'IN_PROGRESS' && order.claimedById && (
               <>
                 <button
                   className="btn-complete"
@@ -161,7 +161,7 @@ const OrderQueue = ({ orders, token, onOrderUpdate, onOrderClick }) => {
           </div>
 
           {/* Recipe hint for IN_PROGRESS orders */}
-          {order.status === 'IN_PROGRESS' && (
+          {order.status === 'IN_PROGRESS' && order.claimedById && (
             <div className="recipe-hint">
               👆 Click for recipe details
             </div>
