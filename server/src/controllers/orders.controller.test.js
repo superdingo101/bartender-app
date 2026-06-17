@@ -8,6 +8,7 @@ jest.mock('../services/database', () => ({
     },
     order: {
       create: jest.fn(),
+      findMany: jest.fn(),
     },
   },
 }));
@@ -20,7 +21,7 @@ jest.mock('../services/socket', () => ({
 
 const { prisma } = require('../services/database');
 const { emitNewOrder } = require('../services/socket');
-const { createOrder } = require('./orders.controller');
+const { createOrder, getAllOrders } = require('./orders.controller');
 
 const buildResponse = () => {
   const res = {
@@ -60,6 +61,40 @@ describe('Orders Controller', () => {
       eventId: 'event-1',
       drinkId: 'drink-1',
     });
+  });
+
+
+  it('filters bartender order lists by event id', async () => {
+    req = {
+      query: { eventId: 'event-1' },
+      user: { userId: 'bartender-1', role: 'BARTENDER' },
+    };
+    prisma.order.findMany.mockResolvedValue([{ id: 'order-1', eventId: 'event-1' }]);
+
+    await getAllOrders(req, res, next);
+
+    expect(prisma.order.findMany).toHaveBeenCalledWith(expect.objectContaining({
+      where: { eventId: 'event-1' },
+    }));
+    expect(res.json).toHaveBeenCalledWith({ orders: [{ id: 'order-1', eventId: 'event-1' }] });
+  });
+
+  it('combines event and pending bartender visibility filters', async () => {
+    req = {
+      query: { eventId: 'event-1', status: 'PENDING' },
+      user: { userId: 'bartender-1', role: 'BARTENDER' },
+    };
+    prisma.order.findMany.mockResolvedValue([]);
+
+    await getAllOrders(req, res, next);
+
+    expect(prisma.order.findMany).toHaveBeenCalledWith(expect.objectContaining({
+      where: {
+        eventId: 'event-1',
+        status: 'PENDING',
+        claimedById: null,
+      },
+    }));
   });
 
   it('rejects customer-facing orders for upcoming events', async () => {

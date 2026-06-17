@@ -31,6 +31,11 @@ export const getEventByCode = (code) => apiCall(`/api/events/code/${code}`);
 
 export const getEventMenu = (id) => apiCall(`/api/events/${id}/menu`);
 
+export const getEvents = (token) =>
+  apiCall('/api/events', {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
 export const getEventById = (id, token) =>
   apiCall(`/api/events/${id}`, {
     headers: { Authorization: `Bearer ${token}` },
@@ -59,10 +64,13 @@ export const createOrder = (orderData, token) => {
   });
 };
 
-export const getMyOrders = (token) =>
-  apiCall('/api/orders', {
+export const getMyOrders = (token, eventId) => {
+  const query = eventId ? `?eventId=${encodeURIComponent(eventId)}` : '';
+
+  return apiCall(`/api/orders${query}`, {
     headers: { Authorization: `Bearer ${token}` },
   });
+};
 
 export const getOrderById = (orderId, token) =>
   apiCall(`/api/orders/${orderId}`, {
@@ -92,6 +100,7 @@ export default {
   checkHealth,
   getEventByCode,
   getEventMenu,
+  getEvents,
   getEventById,
   getAllDrinks,
   getDrinksByCategory,
