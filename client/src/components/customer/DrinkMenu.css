@@ -123,6 +123,8 @@
   margin: 0 auto;
   width: 100%;
   box-sizing: border-box;
+  align-items: start;
+  grid-auto-rows: auto;
 }
 
 .no-drinks {
@@ -237,6 +239,8 @@
     flex: 1 1 auto;
     min-height: 0;
     grid-template-columns: 1fr;
+    grid-auto-rows: auto;
+    align-items: start;
     gap: 16px;
     max-width: none;
     margin: 0;
