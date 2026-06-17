@@ -1,4 +1,5 @@
 const { prisma } = require('../services/database');
+const { eventMenuInclude, emitPublicEventMenuUpdate } = require('../services/eventMenu');
 const { emitEventStatusUpdate, emitDrinkAvailabilityUpdate } = require('../services/socket');
 
 // Normalize manually-entered event codes to URL-safe uppercase values
@@ -102,27 +103,7 @@ const getEventByCode = async (req, res, next) => {
 
     const event = await prisma.event.findUnique({
       where: { code: code.toUpperCase() },
-      include: {
-        drinks: {
-          where: {
-            available: true,
-          },
-          include: {
-            drink: {
-              include: {
-                categories: {
-                  include: {
-                    category: true,
-                  },
-                  orderBy: {
-                    isPrimary: 'desc',
-                  },
-                },
-              },
-            },
-          },
-        },
-      },
+      include: eventMenuInclude,
     });
 
     if (!event) {
@@ -142,27 +123,7 @@ const getEventMenu = async (req, res, next) => {
 
     const event = await prisma.event.findUnique({
       where: { id },
-      include: {
-        drinks: {
-          where: {
-            available: true,
-          },
-          include: {
-            drink: {
-              include: {
-                categories: {
-                  include: {
-                    category: true,
-                  },
-                  orderBy: {
-                    isPrimary: 'desc',
-                  },
-                },
-              },
-            },
-          },
-        },
-      },
+      include: eventMenuInclude,
     });
 
     if (!event) {
@@ -315,7 +276,7 @@ const updateEvent = async (req, res, next) => {
       },
     });
 
-    // Emit real-time update if customer-facing event settings changed
+    // Keep legacy status listeners updated and refresh the full customer menu payload.
     if (
       (status && status !== existingEvent.status)
       || (hidePrices !== undefined && hidePrices !== existingEvent.hidePrices)
@@ -323,6 +284,8 @@ const updateEvent = async (req, res, next) => {
     ) {
       emitEventStatusUpdate(updatedEvent);
     }
+
+    await emitPublicEventMenuUpdate(id);
 
     res.json({
       message: 'Event updated successfully',
@@ -392,6 +355,8 @@ const addDrinkToEvent = async (req, res, next) => {
       },
     });
 
+    await emitPublicEventMenuUpdate(id);
+
     res.status(201).json({
       message: 'Drink added to event successfully',
       eventDrink,
@@ -419,6 +384,8 @@ const removeDrinkFromEvent = async (req, res, next) => {
         },
       },
     });
+
+    await emitPublicEventMenuUpdate(id);
 
     res.json({
       message: 'Drink removed from event successfully',
@@ -455,7 +422,9 @@ const updateEventDrink = async (req, res, next) => {
       },
     });
 
-    // Emit real-time update if availability changed
+    await emitPublicEventMenuUpdate(id);
+
+    // Emit targeted real-time update if availability changed for clients that only need the toggle.
     if (available !== undefined) {
       emitDrinkAvailabilityUpdate(id, drinkId, available);
     }

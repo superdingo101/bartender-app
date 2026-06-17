@@ -95,6 +95,18 @@ const DrinkMenu = ({ event, cart, onAddToCart, onOrderPlaced, socket }) => {
       }
     });
 
+    // Listen for full menu updates when bartenders add, remove, or edit event menu drinks.
+    socket.on('event-menu-updated', (updatedEvent) => {
+      console.log(`🍹 Event menu updated: ${updatedEvent.id}`);
+      setCurrentEvent(updatedEvent);
+      setDrinks(updatedEvent.drinks || []);
+      localStorage.setItem('currentEvent', JSON.stringify(updatedEvent));
+
+      if (updatedEvent.menuOnly) {
+        setShowCart(false);
+      }
+    });
+
     // Listen for drink availability updates
     socket.on('drink-availability-updated', ({ drinkId, available }) => {
       console.log(`🍹 Drink availability updated: ${drinkId} = ${available}`);
@@ -109,6 +121,7 @@ const DrinkMenu = ({ event, cart, onAddToCart, onOrderPlaced, socket }) => {
       console.log(`👋 Leaving event: ${event.id}`);
       socket.emit('leave-event', event.id);
       socket.off('event-status-updated');
+      socket.off('event-menu-updated');
       socket.off('drink-availability-updated');
     };
   }, [socket, event]);

@@ -17,7 +17,7 @@ const initializeSocket = (server) => {
 
   // Authentication middleware
   io.use((socket, next) => {
-    const token = socket.handshake.auth.token;
+    const { token } = socket.handshake.auth;
 
     if (!token) {
       // Allow anonymous connections for public events (customers)
@@ -42,7 +42,7 @@ const initializeSocket = (server) => {
   });
 
   io.on('connection', (socket) => {
-    const user = socket.data.user;
+    const { user } = socket.data;
     console.log(`🔌 Client connected: ${socket.id} (${user.role || 'GUEST'})`);
 
     // Join event room
@@ -107,69 +107,81 @@ const getIO = () => {
 // Emit new order to event room and bartender dashboard
 const emitNewOrder = (order) => {
   if (!io) return;
-  
+
   const eventRoom = `event:${order.eventId}`;
-  
+
   // Notify everyone in the event
   io.to(eventRoom).emit('order-created', order);
-  
+
   // Notify bartender dashboard
   io.to('bartender-dashboard').emit('new-order', order);
-  
+
   console.log(`📢 New order emitted to ${eventRoom} and bartender-dashboard`);
 };
 
 // Emit order status update
 const emitOrderStatusUpdate = (order) => {
   if (!io) return;
-  
+
   const eventRoom = `event:${order.eventId}`;
-  
+
   // Notify everyone in the event
   io.to(eventRoom).emit('order-status-updated', order);
-  
+
   // Notify bartender dashboard
   io.to('bartender-dashboard').emit('order-updated', order);
-  
+
   console.log(`📢 Order status updated: ${order.id} -> ${order.status}`);
 };
 
 // Emit order cancelled
 const emitOrderCancelled = (order) => {
   if (!io) return;
-  
+
   const eventRoom = `event:${order.eventId}`;
-  
+
   io.to(eventRoom).emit('order-cancelled', order);
   io.to('bartender-dashboard').emit('order-cancelled', order);
-  
+
   console.log(`📢 Order cancelled: ${order.id}`);
 };
 
 // Emit event status update
 const emitEventStatusUpdate = (event) => {
   if (!io) return;
-  
+
   const eventRoom = `event:${event.id}`;
-  
+
   io.to(eventRoom).emit('event-status-updated', event);
   io.to('bartender-dashboard').emit('event-updated', event);
-  
+
   console.log(`📢 Event status updated: ${event.id} -> ${event.status}`);
+};
+
+// Emit event menu update
+const emitEventMenuUpdate = (event) => {
+  if (!io) return;
+
+  const eventRoom = `event:${event.id}`;
+
+  io.to(eventRoom).emit('event-menu-updated', event);
+  io.to('bartender-dashboard').emit('event-menu-updated', event);
+
+  console.log(`📢 Event menu updated: ${event.id}`);
 };
 
 // Emit drink availability update
 const emitDrinkAvailabilityUpdate = (eventId, drinkId, available) => {
   if (!io) return;
-  
+
   const eventRoom = `event:${eventId}`;
-  
+
   io.to(eventRoom).emit('drink-availability-updated', {
     eventId,
     drinkId,
     available,
   });
-  
+
   console.log(`📢 Drink availability updated: ${drinkId} -> ${available}`);
 };
 
@@ -194,6 +206,7 @@ module.exports = {
   emitOrderStatusUpdate,
   emitOrderCancelled,
   emitEventStatusUpdate,
+  emitEventMenuUpdate,
   emitDrinkAvailabilityUpdate,
   broadcast,
   emitToRoom,
