@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useAuth } from '../../context/AuthContext';
+import useBodyScrollLock from '../../hooks/useBodyScrollLock';
 
 import API_URL from '../../config/api';
 
 const OrderDetailsModal = ({ order, onClose, allOrders, onComplete }) => {
+  useBodyScrollLock();
   const { token } = useAuth();
   const [drinkDetails, setDrinkDetails] = useState(null);
   const [loading, setLoading] = useState(true);

@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useAuth } from '../../context/AuthContext';
+import useBodyScrollLock from '../../hooks/useBodyScrollLock';
 
 import API_URL from '../../config/api';
 
 const DrinkModal = ({ drink, onClose, onSave }) => {
+  useBodyScrollLock();
   const { token } = useAuth();
   const [formData, setFormData] = useState({
     name: drink?.name || '',
