@@ -1,4 +1,25 @@
+/* eslint-disable no-underscore-dangle */
 const { prisma } = require('../services/database');
+
+const parseNullableFloat = (value) => {
+  if (value === undefined || value === null) {
+    return null;
+  }
+
+  const normalizedValue = typeof value === 'string' ? value.trim() : value;
+
+  if (normalizedValue === '') {
+    return null;
+  }
+
+  const parsedValue = Number(normalizedValue);
+
+  if (Number.isNaN(parsedValue)) {
+    return null;
+  }
+
+  return parsedValue;
+};
 
 // ============ GLASS TYPES CONTROLLER ============
 
@@ -47,7 +68,9 @@ const getGlassTypeById = async (req, res, next) => {
 
 const createGlassType = async (req, res, next) => {
   try {
-    const { name, description, imageUrl, capacity } = req.body;
+    const {
+      name, description, imageUrl, capacity,
+    } = req.body;
 
     if (!name) {
       return res.status(400).json({ error: 'Name is required' });
@@ -58,7 +81,7 @@ const createGlassType = async (req, res, next) => {
         name: name.trim(),
         description: description?.trim() || null,
         imageUrl: imageUrl?.trim() || null,
-        capacity: capacity || null,
+        capacity: parseNullableFloat(capacity),
       },
     });
 
@@ -79,7 +102,9 @@ const createGlassType = async (req, res, next) => {
 const updateGlassType = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { name, description, imageUrl, capacity } = req.body;
+    const {
+      name, description, imageUrl, capacity,
+    } = req.body;
 
     const glassType = await prisma.glassType.update({
       where: { id },
@@ -87,7 +112,7 @@ const updateGlassType = async (req, res, next) => {
         ...(name && { name: name.trim() }),
         ...(description !== undefined && { description: description?.trim() || null }),
         ...(imageUrl !== undefined && { imageUrl: imageUrl?.trim() || null }),
-        ...(capacity !== undefined && { capacity }),
+        ...(capacity !== undefined && { capacity: parseNullableFloat(capacity) }),
       },
     });
 
@@ -279,7 +304,7 @@ module.exports = {
   createGlassType,
   updateGlassType,
   deleteGlassType,
-  
+
   // Equipment
   getAllEquipment,
   getEquipmentById,
