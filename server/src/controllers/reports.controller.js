@@ -11,9 +11,12 @@ const incrementMetric = (map, key, defaults, updater) => {
   updater(map.get(key));
 };
 
-const getIngredientUnitCost = (ingredient) => {
+const getIngredientUnitCost = (ingredient, reportDate) => {
+  const cutoffDate = reportDate ? new Date(reportDate) : null;
   const matchingPurchases = ingredient.purchaseHistory.filter(
-    (purchase) => purchase.unit === ingredient.unit && purchase.quantity > 0,
+    (purchase) => purchase.unit === ingredient.unit
+      && purchase.quantity > 0
+      && (!cutoffDate || new Date(purchase.purchaseDate) <= cutoffDate),
   );
 
   if (matchingPurchases.length > 0) {
@@ -107,7 +110,7 @@ const getReportingStats = async (req, res, next) => {
       order.drink.ingredients.forEach((drinkIngredient) => {
         const ingredient = drinkIngredient.ingredient;
         const quantity = drinkIngredient.quantity * order.quantity;
-        const unitCost = getIngredientUnitCost(ingredient);
+        const unitCost = getIngredientUnitCost(ingredient, order.event?.date || order.createdAt);
         incrementMetric(
           ingredientTotals,
           `${ingredient.id}:${drinkIngredient.unit}`,
