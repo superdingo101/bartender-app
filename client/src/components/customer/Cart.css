@@ -7,6 +7,9 @@
   display: flex;
   justify-content: flex-end;
   z-index: 1000;
+  overflow: hidden;
+  overscroll-behavior: contain;
+  touch-action: none;
   animation: fadeIn 0.3s;
 }
 
@@ -23,8 +26,11 @@
   height: 100dvh;
   max-height: 100vh;
   max-height: 100dvh;
+  min-height: 100%;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  touch-action: pan-y;
   box-shadow: -4px 0 20px rgba(0, 0, 0, 0.2);
   animation: slideIn 0.3s;
   display: flex;
