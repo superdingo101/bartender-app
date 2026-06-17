@@ -10,6 +10,35 @@ const Cart = ({ cart, event, onClose, onOrderPlaced, hidePrices }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
+  // Lock background scrolling while the cart drawer is open so the menu
+  // cannot scroll or peek through behind the overlay on mobile browsers.
+  useEffect(() => {
+    const { body, documentElement } = document;
+    const scrollY = window.scrollY;
+    const previousBodyStyles = {
+      overflow: body.style.overflow,
+      position: body.style.position,
+      top: body.style.top,
+      width: body.style.width,
+    };
+    const previousDocumentOverflow = documentElement.style.overflow;
+
+    body.style.overflow = 'hidden';
+    body.style.position = 'fixed';
+    body.style.top = `-${scrollY}px`;
+    body.style.width = '100%';
+    documentElement.style.overflow = 'hidden';
+
+    return () => {
+      body.style.overflow = previousBodyStyles.overflow;
+      body.style.position = previousBodyStyles.position;
+      body.style.top = previousBodyStyles.top;
+      body.style.width = previousBodyStyles.width;
+      documentElement.style.overflow = previousDocumentOverflow;
+      window.scrollTo(0, scrollY);
+    };
+  }, []);
+
   // Load saved customer name on mount
   useEffect(() => {
     const savedName = localStorage.getItem(CUSTOMER_NAME_KEY);
