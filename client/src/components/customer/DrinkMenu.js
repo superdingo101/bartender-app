@@ -202,27 +202,27 @@ const DrinkMenu = ({ event, cart, onAddToCart, onOrderPlaced, socket }) => {
         })}
       </div>
 
-      {availableDrinks.length === 0 ? (
-        <div className="no-drinks">
-          <div className="no-drinks-icon">😔</div>
-          <h3>No drinks available</h3>
-          <p>
-            {selectedCategory === 'ALL'
-              ? 'Check back later for drinks!'
-              : `No available drinks in ${categories.find(c => c.name === selectedCategory)?.displayName || 'this category'}`}
-          </p>
-          {selectedCategory !== 'ALL' && (
-            <button
-              onClick={() => setSelectedCategory('ALL')}
-              className="clear-filter-btn"
-            >
-              Show All Drinks
-            </button>
-          )}
-        </div>
-      ) : (
-        <div className="drinks-grid">
-          {availableDrinks.map((eventDrink) => (
+      <div className="drinks-grid">
+        {availableDrinks.length === 0 ? (
+          <div className="no-drinks">
+            <div className="no-drinks-icon">😔</div>
+            <h3>No drinks available</h3>
+            <p>
+              {selectedCategory === 'ALL'
+                ? 'Check back later for drinks!'
+                : `No available drinks in ${categories.find(c => c.name === selectedCategory)?.displayName || 'this category'}`}
+            </p>
+            {selectedCategory !== 'ALL' && (
+              <button
+                onClick={() => setSelectedCategory('ALL')}
+                className="clear-filter-btn"
+              >
+                Show All Drinks
+              </button>
+            )}
+          </div>
+        ) : (
+          availableDrinks.map((eventDrink) => (
             <DrinkCard
               key={eventDrink.id}
               eventDrink={eventDrink}
@@ -230,9 +230,9 @@ const DrinkMenu = ({ event, cart, onAddToCart, onOrderPlaced, socket }) => {
               hidePrices={hidePrices}
               menuOnly={menuOnly}
             />
-          ))}
-        </div>
-      )}
+          ))
+        )}
+      </div>
 
       {!menuOnly && showCart && (
         <Cart
