@@ -6,6 +6,7 @@ import {
   getDrinksByCategory,
   getEventByCode,
   getEventMenu,
+  getEvents,
   getEventById,
   getMyOrders,
   getOrderById,
@@ -59,6 +60,7 @@ describe('API service', () => {
   });
 
   it.each([
+    ['getEvents', () => getEvents('token-123'), '/api/events'],
     ['getEventById', () => getEventById('event-1', 'token-123'), '/api/events/event-1'],
     ['getMyOrders', () => getMyOrders('token-123'), '/api/orders'],
     ['getOrderById', () => getOrderById('order-1', 'token-123'), '/api/orders/order-1'],
@@ -91,6 +93,14 @@ describe('API service', () => {
       method: 'POST',
       headers: { Authorization: 'Bearer token-123' },
       body: JSON.stringify(orderData),
+    });
+  });
+
+  it('fetches orders scoped to an event when an event is selected', async () => {
+    await getMyOrders('token-123', 'event 1');
+
+    expectFetch('/api/orders?eventId=event%201', {
+      headers: { Authorization: 'Bearer token-123' },
     });
   });
 
