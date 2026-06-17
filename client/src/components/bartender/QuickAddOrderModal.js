@@ -4,7 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 
 import API_URL from '../../config/api';
 
-const QuickAddOrderModal = ({ onClose, onOrderCreated }) => {
+const QuickAddOrderModal = ({ workingEvent, onClose, onOrderCreated }) => {
   const { token } = useAuth();
   const [events, setEvents] = useState([]);
   const [selectedEvent, setSelectedEvent] = useState(null);
@@ -25,7 +25,7 @@ const QuickAddOrderModal = ({ onClose, onOrderCreated }) => {
 
   useEffect(() => {
     loadData();
-  }, [token]);
+  }, [token, workingEvent]);
 
   const loadData = async () => {
     try {
@@ -50,15 +50,19 @@ const QuickAddOrderModal = ({ onClose, onOrderCreated }) => {
         return eventDate.getTime() === today.getTime();
       });
 
-      setEvents(relevantEvents);
+      const selectableEvents = workingEvent ? [workingEvent] : relevantEvents;
 
-      // Auto-select event if only one
-      if (relevantEvents.length === 1) {
-        await selectEvent(relevantEvents[0]);
-      } else if (relevantEvents.length > 0) {
+      setEvents(selectableEvents);
+
+      // Auto-select the dashboard working event when provided.
+      if (workingEvent && selectableEvents.length > 0) {
+        await selectEvent(selectableEvents[0]);
+      } else if (selectableEvents.length === 1) {
+        await selectEvent(selectableEvents[0]);
+      } else if (selectableEvents.length > 0) {
         // Select ACTIVE event if exists, otherwise first one
-        const activeEvent = relevantEvents.find(e => e.status === 'ACTIVE');
-        await selectEvent(activeEvent || relevantEvents[0]);
+        const activeEvent = selectableEvents.find(e => e.status === 'ACTIVE');
+        await selectEvent(activeEvent || selectableEvents[0]);
       }
 
     } catch (error) {
@@ -188,8 +192,8 @@ const QuickAddOrderModal = ({ onClose, onOrderCreated }) => {
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="p-6">
-            {/* Event Selection (only show if multiple events) */}
-            {events.length > 1 && (
+            {/* Event Selection (only show if multiple events and no dashboard working event is locked) */}
+            {!workingEvent && events.length > 1 && (
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Event *

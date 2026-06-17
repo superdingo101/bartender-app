@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useSocket } from '../../hooks/useSocket';
 import { getEvents, getMyOrders } from '../../services/api';
@@ -25,6 +25,8 @@ const Dashboard = () => {
   
   // Quick Add Order Modal state
   const [showQuickAdd, setShowQuickAdd] = useState(false);
+  const selectedEventIdRef = useRef(selectedEventId);
+  const latestOrdersRequestRef = useRef(0);
 
   useEffect(() => {
     if (token) {
@@ -33,6 +35,8 @@ const Dashboard = () => {
   }, [token]);
 
   useEffect(() => {
+    selectedEventIdRef.current = selectedEventId;
+
     if (token && selectedEventId) {
       loadOrders(selectedEventId);
     } else {
@@ -119,12 +123,21 @@ const Dashboard = () => {
 
     try {
       setLoading(true);
+      const requestId = latestOrdersRequestRef.current + 1;
+      latestOrdersRequestRef.current = requestId;
       const response = await getMyOrders(token, eventId);
+
+      if (requestId !== latestOrdersRequestRef.current || selectedEventIdRef.current !== eventId) {
+        return;
+      }
+
       setOrders(response.orders);
     } catch (error) {
       console.error('Failed to load orders:', error);
     } finally {
-      setLoading(false);
+      if (selectedEventIdRef.current === eventId) {
+        setLoading(false);
+      }
     }
   };
 
@@ -306,6 +319,7 @@ const Dashboard = () => {
       {/* Quick Add Order Modal */}
       {showQuickAdd && (
         <QuickAddOrderModal
+          workingEvent={selectedEvent}
           onClose={() => setShowQuickAdd(false)}
           onOrderCreated={() => {
             loadOrders(); // Refresh orders after creation
