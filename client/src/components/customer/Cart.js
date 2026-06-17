@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { createOrder } from '../../services/api';
+import { createOrder, getEventMenu } from '../../services/api';
 import './Cart.css';
 
 const CUSTOMER_NAME_KEY = 'bartending_app_customer_name';
+
+const getEventStatus = (event) => event?.status || 'UPCOMING';
 
 const Cart = ({ cart, event, onClose, onOrderPlaced, hidePrices }) => {
   const [customerName, setCustomerName] = useState('');
@@ -72,6 +74,21 @@ const Cart = ({ cart, event, onClose, onOrderPlaced, hidePrices }) => {
 
     try {
       localStorage.setItem(CUSTOMER_NAME_KEY, customerName.trim());
+
+      const latestEvent = event?.id ? (await getEventMenu(event.id)).event : event;
+      const eventStatus = getEventStatus(latestEvent);
+
+      if (eventStatus === 'UPCOMING') {
+        setError('This event has not started yet. Your cart is saved for when ordering opens.');
+        return;
+      }
+
+      if (eventStatus !== 'ACTIVE') {
+        cart.clearCart();
+        window.alert('This event has ended, so ordering is closed. Your cart has been cleared.');
+        onClose();
+        return;
+      }
 
       const orders = [];
       for (const item of cart.items) {
@@ -172,8 +189,9 @@ const Cart = ({ cart, event, onClose, onOrderPlaced, hidePrices }) => {
 
             <div className="cart-form">
               <div className="form-group">
-                <label>Your Name *</label>
+                <label htmlFor="customer-name">Your Name *</label>
                 <input
+                  id="customer-name"
                   type="text"
                   value={customerName}
                   onChange={handleCustomerNameChange}
@@ -183,8 +201,9 @@ const Cart = ({ cart, event, onClose, onOrderPlaced, hidePrices }) => {
               </div>
 
               <div className="form-group">
-                <label>Special Instructions (Optional)</label>
+                <label htmlFor="order-notes">Special Instructions (Optional)</label>
                 <textarea
+                  id="order-notes"
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                   placeholder="E.g., Extra ice, no sugar..."

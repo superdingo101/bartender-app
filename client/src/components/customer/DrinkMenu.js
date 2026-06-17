@@ -4,7 +4,7 @@ import DrinkCard from './DrinkCard';
 import Cart from './Cart';
 import './DrinkMenu.css';
 
-const DrinkMenu = ({ event, cart, onAddToCart, socket }) => {
+const DrinkMenu = ({ event, cart, onAddToCart, onOrderPlaced, socket }) => {
   const [currentEvent, setCurrentEvent] = useState(event);
   const [drinks, setDrinks] = useState(event.drinks || []);
   const [selectedCategory, setSelectedCategory] = useState('ALL');
@@ -226,6 +226,7 @@ const DrinkMenu = ({ event, cart, onAddToCart, socket }) => {
           cart={cart}
           event={currentEvent}
           onClose={() => setShowCart(false)}
+          onOrderPlaced={onOrderPlaced}
           hidePrices={hidePrices}
         />
       )}

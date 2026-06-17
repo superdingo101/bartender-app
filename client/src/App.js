@@ -104,22 +104,9 @@ function CustomerApp() {
           <button 
             onClick={handleChangeEvent}
             className="change-event-btn"
-            style={{
-              position: 'fixed',
-              top: '20px',
-              right: '20px',
-              padding: '10px 20px',
-              background: '#ef4444',
-              color: 'white',
-              border: 'none',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              zIndex: 1000,
-              fontSize: '14px',
-              fontWeight: '600'
-            }}
+            aria-label="Choose a different event"
           >
-            🔄 Change Event
+            ↔ Switch event
           </button>
           <DrinkMenu
             event={event}
