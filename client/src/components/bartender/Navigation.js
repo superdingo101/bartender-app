@@ -16,47 +16,53 @@ const Navigation = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           <div className="flex items-center space-x-4 md:space-x-8 overflow-x-auto">
-            <Link 
-              to="/bartender/orders" 
+            <Link
+              to="/bartender/orders"
               className="text-gray-600 hover:text-purple-600 font-medium transition whitespace-nowrap"
             >
               Orders
             </Link>
-            <Link 
-              to="/bartender/events" 
+            <Link
+              to="/bartender/events"
               className="text-gray-600 hover:text-purple-600 font-medium transition whitespace-nowrap"
             >
               Events
             </Link>
-            <Link 
-              to="/bartender/drinks" 
+            <Link
+              to="/bartender/drinks"
               className="text-gray-600 hover:text-purple-600 font-medium transition whitespace-nowrap"
             >
               Drinks
             </Link>
-            <Link 
-              to="/bartender/ingredients" 
+            <Link
+              to="/bartender/ingredients"
               className="text-gray-600 hover:text-purple-600 font-medium transition whitespace-nowrap"
             >
               Ingredients
             </Link>
-            <Link 
-              to="/bartender/resources" 
+            <Link
+              to="/bartender/resources"
               className="text-gray-600 hover:text-purple-600 font-medium transition whitespace-nowrap"
             >
               Resources
             </Link>
+            <Link
+              to="/bartender/reports"
+              className="text-gray-600 hover:text-purple-600 font-medium transition whitespace-nowrap"
+            >
+              Reports
+            </Link>
             {user?.role === 'ADMIN' && (
-              <Link 
-                to="/admin" 
+              <Link
+                to="/admin"
                 className="text-gray-600 hover:text-purple-600 font-medium transition whitespace-nowrap"
               >
                 Admin
               </Link>
             )}
 			{user?.role === 'BARTENDER' && (
-              <Link 
-                to="/bartender/admin" 
+              <Link
+                to="/bartender/admin"
                 className="text-gray-600 hover:text-purple-600 font-medium transition whitespace-nowrap"
               >
                 Admin
