@@ -163,9 +163,27 @@ const createOrder = async (req, res, next) => {
       return res.status(404).json({ error: 'Event not found' });
     }
 
+    if (event.status === 'UPCOMING') {
+      return res.status(400).json({
+        error: 'This event has not started yet',
+      });
+    }
+
+    if (event.status === 'COMPLETED') {
+      return res.status(400).json({
+        error: 'This event has ended',
+      });
+    }
+
     if (event.status === 'CANCELLED') {
       return res.status(400).json({
         error: 'Cannot place orders for cancelled events',
+      });
+    }
+
+    if (event.status !== 'ACTIVE') {
+      return res.status(400).json({
+        error: 'Ordering is only available for active events',
       });
     }
 
