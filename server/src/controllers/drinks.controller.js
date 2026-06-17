@@ -1,4 +1,5 @@
 const { prisma } = require('../services/database');
+const { emitPublicEventMenuUpdate } = require('../services/eventMenu');
 const { emitDrinkAvailabilityUpdate } = require('../services/socket');
 
 // Get all drinks with filtering and search (UPDATED with new relations)
@@ -670,6 +671,7 @@ const toggleDrink = async (req, res, next) => {
       },
     });
 
+    await emitPublicEventMenuUpdate(eventId);
     emitDrinkAvailabilityUpdate(eventId, id, nextAvailability);
 
     res.json({
