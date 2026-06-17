@@ -156,27 +156,49 @@
 
 /* Responsive */
 @media (max-width: 640px) {
+  .drink-card {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+
   .drink-image {
+    display: block;
+    flex: 0 0 150px;
     height: 150px;
+  }
+
+  .drink-image img {
+    display: block;
   }
   
   .drink-placeholder {
+    display: flex;
     font-size: 4rem;
   }
   
   .drink-info {
+    flex: 1 1 auto;
     padding: 0.75rem;
   }
   
   .drink-name {
     font-size: 1.1rem;
   }
+
+  .drink-footer {
+    display: flex;
+    flex: 0 0 auto;
+    padding: 0.75rem;
+  }
   
   .drink-price {
+    display: block;
     font-size: 1.25rem;
   }
   
   .add-button {
+    display: inline-block;
     padding: 0.5rem 1rem;
     font-size: 0.8rem;
   }
