@@ -117,14 +117,15 @@
 .drinks-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  grid-auto-rows: max-content;
+  align-items: start;
+  align-content: start;
   gap: 20px;
   padding: 20px;
   max-width: 1400px;
   margin: 0 auto;
   width: 100%;
   box-sizing: border-box;
-  align-items: start;
-  grid-auto-rows: auto;
 }
 
 .no-drinks {
@@ -236,11 +237,13 @@
   }
 
   .drinks-grid {
+    display: grid;
     flex: 1 1 auto;
     min-height: 0;
     grid-template-columns: 1fr;
-    grid-auto-rows: auto;
+    grid-auto-rows: max-content;
     align-items: start;
+    align-content: start;
     gap: 16px;
     max-width: none;
     margin: 0;
