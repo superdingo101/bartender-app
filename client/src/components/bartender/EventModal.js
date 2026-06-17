@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useAuth } from '../../context/AuthContext';
+import useBodyScrollLock from '../../hooks/useBodyScrollLock';
 
 import API_URL from '../../config/api';
 
@@ -14,6 +15,7 @@ const normalizeEventCode = (value) => (value || '')
   .slice(0, EVENT_CODE_MAX_LENGTH);
 
 const EventModal = ({ event, onClose, onSave }) => {
+  useBodyScrollLock();
   const { token } = useAuth();
   const [formData, setFormData] = useState({
     name: event?.name || '',

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useAuth } from '../../context/AuthContext';
 import Navigation from './Navigation';
+import useBodyScrollLock from '../../hooks/useBodyScrollLock';
 
 import API_URL from '../../config/api';
 
@@ -236,6 +237,7 @@ const ResourcesPage = () => {
 };
 
 const ResourceModal = ({ type, item, onClose, onSave, token }) => {
+  useBodyScrollLock();
   const isGlass = type === 'glass';
   const [formData, setFormData] = useState({
     name: item?.name || '',

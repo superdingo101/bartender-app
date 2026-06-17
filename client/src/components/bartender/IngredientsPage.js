@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useAuth } from '../../context/AuthContext';
 import Navigation from './Navigation';
+import useBodyScrollLock from '../../hooks/useBodyScrollLock';
 
 import API_URL from '../../config/api';
 
@@ -161,6 +162,7 @@ const IngredientsPage = () => {
 };
 
 const IngredientModal = ({ ingredient, onClose, onSave, token }) => {
+  useBodyScrollLock();
   const [formData, setFormData] = useState({
     name: ingredient?.name || '',
     type: ingredient?.type || '',
