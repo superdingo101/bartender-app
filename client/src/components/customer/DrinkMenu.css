@@ -124,9 +124,14 @@
     padding: 12px 14px 10px;
   }
 
+  .event-info {
+    width: 100%;
+    padding-right: 126px;
+    box-sizing: border-box;
+  }
+
   .event-info h1 {
     margin-bottom: 4px;
-    padding-right: 112px;
     font-size: 1.25rem;
     line-height: 1.15;
   }
