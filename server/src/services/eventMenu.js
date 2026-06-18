@@ -21,6 +21,11 @@ const eventMenuInclude = {
               isPrimary: 'desc',
             },
           },
+          ingredients: {
+            include: {
+              ingredient: true,
+            },
+          },
         },
       },
     },
