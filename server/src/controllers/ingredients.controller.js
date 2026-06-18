@@ -1,5 +1,14 @@
 const { prisma } = require('../services/database');
 
+const toOptionalFloat = (value, fallback = null) => {
+  if (value === undefined || value === null || value === '') {
+    return fallback;
+  }
+
+  const parsed = Number.parseFloat(value);
+  return Number.isNaN(parsed) ? fallback : parsed;
+};
+
 // Get all ingredients
 const getAllIngredients = async (req, res, next) => {
   try {
@@ -89,9 +98,9 @@ const createIngredient = async (req, res, next) => {
         type: type.trim(),
         brand: brand?.trim() || null,
         unit: unit.trim(),
-        quantity: quantity || 0,
-        minQuantity: minQuantity || 0,
-        bottlePrice: bottlePrice || null,
+        quantity: toOptionalFloat(quantity, 0),
+        minQuantity: toOptionalFloat(minQuantity, 0),
+        bottlePrice: toOptionalFloat(bottlePrice),
       },
       include: {
         purchaseHistory: true,
@@ -125,9 +134,9 @@ const updateIngredient = async (req, res, next) => {
         ...(type && { type: type.trim() }),
         ...(brand !== undefined && { brand: brand?.trim() || null }),
         ...(unit && { unit: unit.trim() }),
-        ...(quantity !== undefined && { quantity }),
-        ...(minQuantity !== undefined && { minQuantity }),
-        ...(bottlePrice !== undefined && { bottlePrice }),
+        ...(quantity !== undefined && { quantity: toOptionalFloat(quantity, 0) }),
+        ...(minQuantity !== undefined && { minQuantity: toOptionalFloat(minQuantity, 0) }),
+        ...(bottlePrice !== undefined && { bottlePrice: toOptionalFloat(bottlePrice) }),
       },
       include: {
         purchaseHistory: {
@@ -144,6 +153,11 @@ const updateIngredient = async (req, res, next) => {
   } catch (error) {
     if (error.code === 'P2025') {
       return res.status(404).json({ error: 'Ingredient not found' });
+    }
+    if (error.code === 'P2002') {
+      return res.status(409).json({
+        error: 'An ingredient with this name already exists',
+      });
     }
     next(error);
   }
