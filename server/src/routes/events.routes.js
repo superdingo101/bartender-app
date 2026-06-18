@@ -28,6 +28,13 @@ router.put(
   eventsController.updateEvent,
 );
 
+router.put(
+  '/:id/drinks/reorder',
+  authenticate,
+  authorize('BARTENDER', 'ADMIN'),
+  eventsController.reorderEventDrinks,
+);
+
 router.delete(
   '/:id',
   authenticate,

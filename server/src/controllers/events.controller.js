@@ -64,8 +64,19 @@ const getEventById = async (req, res, next) => {
           },
         },
         drinks: {
+          orderBy: [
+            { displayOrder: 'asc' },
+            { createdAt: 'asc' },
+          ],
           include: {
-            drink: true,
+            drink: {
+              include: {
+                categories: {
+                  include: { category: true },
+                  orderBy: { isPrimary: 'desc' },
+                },
+              },
+            },
           },
         },
         orders: {
@@ -296,6 +307,81 @@ const updateEvent = async (req, res, next) => {
   }
 };
 
+// Reorder drinks on the customer-facing event menu
+const reorderEventDrinks = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { drinkIds } = req.body;
+    const { userId } = req.user;
+    const userRole = req.user.role;
+
+    if (!Array.isArray(drinkIds) || drinkIds.length === 0) {
+      return res.status(400).json({ error: 'An ordered drinkIds array is required' });
+    }
+
+    const event = await prisma.event.findUnique({
+      where: { id },
+      select: { hostId: true },
+    });
+
+    if (!event) {
+      return res.status(404).json({ error: 'Event not found' });
+    }
+
+    if (event.hostId !== userId && userRole !== 'ADMIN') {
+      return res.status(403).json({
+        error: 'You do not have permission to update this event menu',
+      });
+    }
+
+    const existingEventDrinks = await prisma.eventDrink.findMany({
+      where: { eventId: id },
+      select: { drinkId: true },
+    });
+    const existingDrinkIds = existingEventDrinks.map((eventDrink) => eventDrink.drinkId);
+    const uniqueDrinkIds = [...new Set(drinkIds)];
+
+    if (uniqueDrinkIds.length !== drinkIds.length) {
+      return res.status(400).json({ error: 'Drink IDs cannot contain duplicates' });
+    }
+
+    const hasSameDrinks = uniqueDrinkIds.length === existingDrinkIds.length
+      && uniqueDrinkIds.every((drinkId) => existingDrinkIds.includes(drinkId));
+
+    if (!hasSameDrinks) {
+      return res.status(400).json({
+        error: 'Drink IDs must match the drinks currently assigned to this event',
+      });
+    }
+
+    await prisma.$transaction(
+      uniqueDrinkIds.map((drinkId, displayOrder) => prisma.eventDrink.update({
+        where: {
+          eventId_drinkId: {
+            eventId: id,
+            drinkId,
+          },
+        },
+        data: { displayOrder },
+      })),
+    );
+
+    await emitPublicEventMenuUpdate(id);
+
+    const updatedEvent = await prisma.event.findUnique({
+      where: { id },
+      include: eventMenuInclude,
+    });
+
+    res.json({
+      message: 'Event menu order updated successfully',
+      event: updatedEvent,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 // Delete event
 const deleteEvent = async (req, res, next) => {
   try {
@@ -343,16 +429,27 @@ const addDrinkToEvent = async (req, res, next) => {
       });
     }
 
-    const eventDrink = await prisma.eventDrink.create({
-      data: {
-        eventId: id,
-        drinkId,
-        price: parseFloat(price),
-        available: available !== undefined ? available : true,
-      },
-      include: {
-        drink: true,
-      },
+    const eventDrink = await prisma.$transaction(async (tx) => {
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${id}))`;
+
+      const lastEventDrink = await tx.eventDrink.findFirst({
+        where: { eventId: id },
+        orderBy: { displayOrder: 'desc' },
+        select: { displayOrder: true },
+      });
+
+      return tx.eventDrink.create({
+        data: {
+          eventId: id,
+          drinkId,
+          price: parseFloat(price),
+          displayOrder: (lastEventDrink?.displayOrder ?? -1) + 1,
+          available: available !== undefined ? available : true,
+        },
+        include: {
+          drink: true,
+        },
+      });
     });
 
     await emitPublicEventMenuUpdate(id);
@@ -446,6 +543,7 @@ module.exports = {
   checkEventCodeAvailability,
   createEvent,
   updateEvent,
+  reorderEventDrinks,
   deleteEvent,
   addDrinkToEvent,
   removeDrinkFromEvent,

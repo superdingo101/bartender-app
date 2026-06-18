@@ -1,6 +1,15 @@
 import React, { useState } from 'react';
 
-const EventDrinkCard = ({ eventDrink, onRemove, onToggleAvailability, onUpdatePrice }) => {
+const EventDrinkCard = ({
+  eventDrink,
+  onRemove,
+  onToggleAvailability,
+  onUpdatePrice,
+  onMoveUp,
+  onMoveDown,
+  isFirst,
+  isLast,
+}) => {
   const [editingPrice, setEditingPrice] = useState(false);
   const [newPrice, setNewPrice] = useState(eventDrink.price.toString());
 
@@ -18,20 +27,38 @@ const EventDrinkCard = ({ eventDrink, onRemove, onToggleAvailability, onUpdatePr
         <div className="text-3xl">
           {primaryCategory?.icon || '🍹'}
         </div>
-        <button
-          onClick={onRemove}
-          className="text-red-500 hover:text-red-700 transition"
-          title="Remove from event"
-        >
-          🗑️
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={onMoveUp}
+            disabled={isFirst}
+            className="text-gray-500 hover:text-purple-700 transition disabled:opacity-30 disabled:cursor-not-allowed"
+            title="Move earlier on customer menu"
+          >
+            ↑
+          </button>
+          <button
+            onClick={onMoveDown}
+            disabled={isLast}
+            className="text-gray-500 hover:text-purple-700 transition disabled:opacity-30 disabled:cursor-not-allowed"
+            title="Move later on customer menu"
+          >
+            ↓
+          </button>
+          <button
+            onClick={onRemove}
+            className="text-red-500 hover:text-red-700 transition"
+            title="Remove from event"
+          >
+            🗑️
+          </button>
+        </div>
       </div>
 
       <h3 className="text-lg font-bold text-gray-800 mb-2">{eventDrink.drink.name}</h3>
-      
+
       <div className="mb-3 flex flex-wrap gap-1">
         {allCategories.map((cat, idx) => (
-          <span 
+          <span
             key={cat.id}
             className={`inline-block px-2 py-1 rounded text-xs font-medium ${
               idx === 0 ? 'bg-purple-100 text-purple-800' : 'bg-gray-100 text-gray-700'
