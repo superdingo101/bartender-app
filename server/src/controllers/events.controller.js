@@ -429,23 +429,27 @@ const addDrinkToEvent = async (req, res, next) => {
       });
     }
 
-    const lastEventDrink = await prisma.eventDrink.findFirst({
-      where: { eventId: id },
-      orderBy: { displayOrder: 'desc' },
-      select: { displayOrder: true },
-    });
+    const eventDrink = await prisma.$transaction(async (tx) => {
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${id}))`;
 
-    const eventDrink = await prisma.eventDrink.create({
-      data: {
-        eventId: id,
-        drinkId,
-        price: parseFloat(price),
-        displayOrder: (lastEventDrink?.displayOrder ?? -1) + 1,
-        available: available !== undefined ? available : true,
-      },
-      include: {
-        drink: true,
-      },
+      const lastEventDrink = await tx.eventDrink.findFirst({
+        where: { eventId: id },
+        orderBy: { displayOrder: 'desc' },
+        select: { displayOrder: true },
+      });
+
+      return tx.eventDrink.create({
+        data: {
+          eventId: id,
+          drinkId,
+          price: parseFloat(price),
+          displayOrder: (lastEventDrink?.displayOrder ?? -1) + 1,
+          available: available !== undefined ? available : true,
+        },
+        include: {
+          drink: true,
+        },
+      });
     });
 
     await emitPublicEventMenuUpdate(id);

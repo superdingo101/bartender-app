@@ -5,8 +5,11 @@ jest.mock('../services/database', () => ({
     },
     eventDrink: {
       findMany: jest.fn(),
+      findFirst: jest.fn(),
+      create: jest.fn(),
       update: jest.fn(),
     },
+    $executeRaw: jest.fn(),
     $transaction: jest.fn(),
   },
 }));
@@ -23,7 +26,7 @@ jest.mock('../services/socket', () => ({
 
 const { prisma } = require('../services/database');
 const { emitPublicEventMenuUpdate } = require('../services/eventMenu');
-const { reorderEventDrinks } = require('./events.controller');
+const { addDrinkToEvent, reorderEventDrinks } = require('./events.controller');
 
 const buildResponse = () => {
   const res = {
@@ -57,7 +60,9 @@ describe('Events Controller', () => {
       { drinkId: 'drink-2' },
     ]);
     prisma.eventDrink.update.mockImplementation((updateArgs) => updateArgs);
-    prisma.$transaction.mockImplementation(async (updates) => updates);
+    prisma.$transaction.mockImplementation(async (updates) => (
+      typeof updates === 'function' ? updates(prisma) : updates
+    ));
     emitPublicEventMenuUpdate.mockResolvedValue(undefined);
   });
 
@@ -131,5 +136,48 @@ describe('Events Controller', () => {
       error: 'Drink IDs must match the drinks currently assigned to this event',
     });
     expect(prisma.$transaction).not.toHaveBeenCalled();
+  });
+
+  it('assigns append order inside a per-event transaction lock when adding a drink', async () => {
+    req.body = { drinkId: 'drink-3', price: '12.50' };
+    prisma.eventDrink.findFirst.mockResolvedValue({ displayOrder: 4 });
+    prisma.eventDrink.create.mockResolvedValue({
+      id: 'event-drink-3',
+      drinkId: 'drink-3',
+      displayOrder: 5,
+    });
+
+    await addDrinkToEvent(req, res, next);
+
+    expect(prisma.$transaction).toHaveBeenCalledWith(expect.any(Function));
+    expect(prisma.$executeRaw).toHaveBeenCalledTimes(1);
+    expect(prisma.eventDrink.findFirst).toHaveBeenCalledWith({
+      where: { eventId: 'event-1' },
+      orderBy: { displayOrder: 'desc' },
+      select: { displayOrder: true },
+    });
+    expect(prisma.eventDrink.create).toHaveBeenCalledWith({
+      data: {
+        eventId: 'event-1',
+        drinkId: 'drink-3',
+        price: 12.5,
+        displayOrder: 5,
+        available: true,
+      },
+      include: {
+        drink: true,
+      },
+    });
+    expect(emitPublicEventMenuUpdate).toHaveBeenCalledWith('event-1');
+    expect(res.status).toHaveBeenCalledWith(201);
+    expect(res.json).toHaveBeenCalledWith({
+      message: 'Drink added to event successfully',
+      eventDrink: {
+        id: 'event-drink-3',
+        drinkId: 'drink-3',
+        displayOrder: 5,
+      },
+    });
+    expect(next).not.toHaveBeenCalled();
   });
 });
