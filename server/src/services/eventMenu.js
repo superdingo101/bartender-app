@@ -21,6 +21,17 @@ const eventMenuInclude = {
               isPrimary: 'desc',
             },
           },
+          ingredients: {
+            select: {
+              ingredient: {
+                select: {
+                  name: true,
+                  type: true,
+                  brand: true,
+                },
+              },
+            },
+          },
         },
       },
     },

@@ -4,10 +4,41 @@ import DrinkCard from './DrinkCard';
 import Cart from './Cart';
 import './DrinkMenu.css';
 
+
+const LIQUOR_FILTERS = [
+  { name: 'VODKA', displayName: 'Vodka', icon: '🍸', ingredient: 'vodka' },
+  { name: 'WHISKEY', displayName: 'Whiskey', icon: '🥃', ingredient: 'whiskey' },
+  { name: 'RUM', displayName: 'Rum', icon: '🏴‍☠️', ingredient: 'rum' },
+  { name: 'TEQUILA', displayName: 'Tequila', icon: '🌵', ingredient: 'tequila' },
+];
+
+const normalizeIngredientText = (value) => (value || '').toString().toLowerCase();
+
+export const drinkHasLiquorType = (drink, liquorType) => {
+  const target = normalizeIngredientText(liquorType);
+
+  return (drink?.ingredients || []).some((drinkIngredient) => {
+    const ingredient = drinkIngredient?.ingredient || drinkIngredient;
+    const searchableText = [
+      ingredient?.name,
+      ingredient?.type,
+      ingredient?.brand,
+    ].map(normalizeIngredientText).join(' ');
+
+    return searchableText.includes(target);
+  });
+};
+
+const eventDrinkHasLiquorType = (eventDrink, liquorType) => drinkHasLiquorType(eventDrink?.drink, liquorType);
+
+export const getAvailableLiquorFilters = (eventDrinks) => LIQUOR_FILTERS.filter((filter) =>
+  eventDrinks.some((eventDrink) => eventDrinkHasLiquorType(eventDrink, filter.ingredient))
+);
+
 const DrinkMenu = ({ event, cart, onAddToCart, onOrderPlaced, socket }) => {
   const [currentEvent, setCurrentEvent] = useState(event);
   const [drinks, setDrinks] = useState(event.drinks || []);
-  const [selectedCategory, setSelectedCategory] = useState('ALL');
+  const [selectedFilter, setSelectedFilter] = useState('ALL');
   const [showCart, setShowCart] = useState(false);
 
   useEffect(() => {
@@ -43,8 +74,8 @@ const DrinkMenu = ({ event, cart, onAddToCart, onOrderPlaced, socket }) => {
   const hidePrices = currentEvent.hidePrices || false;
   const menuOnly = currentEvent.menuOnly || false;
 
-  // Get unique categories from drinks
-  const categories = React.useMemo(() => {
+  // Get unique category and liquor filters from drinks
+  const filters = React.useMemo(() => {
     const categorySet = new Map();
     categorySet.set('ALL', { name: 'ALL', displayName: 'All Drinks', icon: '🍹' });
 
@@ -61,6 +92,12 @@ const DrinkMenu = ({ event, cart, onAddToCart, onOrderPlaced, socket }) => {
             });
           }
         });
+      }
+    });
+
+    getAvailableLiquorFilters(drinks).forEach((filter) => {
+      if (!categorySet.has(filter.name)) {
+        categorySet.set(filter.name, filter);
       }
     });
 
@@ -126,20 +163,25 @@ const DrinkMenu = ({ event, cart, onAddToCart, onOrderPlaced, socket }) => {
     };
   }, [socket, event]);
 
-  // Filter drinks by category
+  // Filter drinks by category or liquor type
   const filteredDrinks = React.useMemo(() => {
-    if (selectedCategory === 'ALL') {
+    if (selectedFilter === 'ALL') {
       return drinks;
     }
 
     return drinks.filter((eventDrink) => {
       const drink = eventDrink.drink;
+      const liquorFilter = LIQUOR_FILTERS.find((filter) => filter.name === selectedFilter);
+      if (liquorFilter) {
+        return eventDrinkHasLiquorType(eventDrink, liquorFilter.ingredient);
+      }
+
       if (!drink?.categories || !Array.isArray(drink.categories)) {
         return false;
       }
-      return drink.categories.some(dc => dc.category?.name === selectedCategory);
+      return drink.categories.some(dc => dc.category?.name === selectedFilter);
     });
-  }, [drinks, selectedCategory]);
+  }, [drinks, selectedFilter]);
 
   const availableDrinks = filteredDrinks.filter((ed) => ed.available);
 
@@ -183,20 +225,23 @@ const DrinkMenu = ({ event, cart, onAddToCart, onOrderPlaced, socket }) => {
       </div>
 
       <div className="category-filter">
-        {categories.map((category) => {
-          const count = category.name === 'ALL'
+        {filters.map((filter) => {
+          const liquorFilter = LIQUOR_FILTERS.find((item) => item.name === filter.name);
+          const count = filter.name === 'ALL'
             ? drinks.length
             : drinks.filter(ed =>
-                ed.drink?.categories?.some(dc => dc.category?.name === category.name)
+                liquorFilter
+                  ? eventDrinkHasLiquorType(ed, liquorFilter.ingredient)
+                  : ed.drink?.categories?.some(dc => dc.category?.name === filter.name)
               ).length;
 
           return (
             <button
-              key={category.name}
-              className={`category-btn ${selectedCategory === category.name ? 'active' : ''}`}
-              onClick={() => setSelectedCategory(category.name)}
+              key={filter.name}
+              className={`category-btn ${selectedFilter === filter.name ? 'active' : ''}`}
+              onClick={() => setSelectedFilter(filter.name)}
             >
-              {category.icon} {category.displayName} ({count})
+              {filter.icon} {filter.displayName} ({count})
             </button>
           );
         })}
@@ -208,13 +253,13 @@ const DrinkMenu = ({ event, cart, onAddToCart, onOrderPlaced, socket }) => {
             <div className="no-drinks-icon">😔</div>
             <h3>No drinks available</h3>
             <p>
-              {selectedCategory === 'ALL'
+              {selectedFilter === 'ALL'
                 ? 'Check back later for drinks!'
-                : `No available drinks in ${categories.find(c => c.name === selectedCategory)?.displayName || 'this category'}`}
+                : `No available drinks in ${filters.find(c => c.name === selectedFilter)?.displayName || 'this category'}`}
             </p>
-            {selectedCategory !== 'ALL' && (
+            {selectedFilter !== 'ALL' && (
               <button
-                onClick={() => setSelectedCategory('ALL')}
+                onClick={() => setSelectedFilter('ALL')}
                 className="clear-filter-btn"
               >
                 Show All Drinks
