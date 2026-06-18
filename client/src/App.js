@@ -55,6 +55,10 @@ function CustomerApp() {
   }, []);
 
   const handleEventFound = (foundEvent) => {
+    if (event?.id && event.id !== foundEvent.id && cart.itemCount > 0) {
+      cart.clearCart();
+    }
+
     setEvent(foundEvent);
     const expiryTime = new Date().getTime() + (12 * 60 * 60 * 1000); // 12 hours
     localStorage.setItem('currentEvent', JSON.stringify(foundEvent));
@@ -81,6 +85,10 @@ function CustomerApp() {
 
   // Allow customers to change events
   const handleChangeEvent = () => {
+    if (cart.itemCount > 0) {
+      cart.clearCart();
+    }
+
     localStorage.removeItem('currentEvent');
     localStorage.removeItem('currentEventExpiry');
     setEvent(null);
