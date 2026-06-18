@@ -1,12 +1,23 @@
 const { prisma } = require('../services/database');
 
-const toOptionalFloat = (value, fallback = null) => {
-  if (value === undefined || value === null || value === '') {
+const toOptionalFloat = (value, fallback = null, fieldName = 'Value') => {
+  if (value === undefined || value === null) {
     return fallback;
   }
 
-  const parsed = Number.parseFloat(value);
-  return Number.isNaN(parsed) ? fallback : parsed;
+  const normalized = typeof value === 'string' ? value.trim() : value;
+  if (normalized === '') {
+    return fallback;
+  }
+
+  const parsed = typeof normalized === 'number' ? normalized : Number(normalized);
+  if (!Number.isFinite(parsed)) {
+    const error = new Error(`${fieldName} must be a valid number`);
+    error.statusCode = 400;
+    throw error;
+  }
+
+  return parsed;
 };
 
 // Get all ingredients
@@ -98,9 +109,9 @@ const createIngredient = async (req, res, next) => {
         type: type.trim(),
         brand: brand?.trim() || null,
         unit: unit.trim(),
-        quantity: toOptionalFloat(quantity, 0),
-        minQuantity: toOptionalFloat(minQuantity, 0),
-        bottlePrice: toOptionalFloat(bottlePrice),
+        quantity: toOptionalFloat(quantity, 0, 'Quantity'),
+        minQuantity: toOptionalFloat(minQuantity, 0, 'Minimum quantity'),
+        bottlePrice: toOptionalFloat(bottlePrice, null, 'Bottle price'),
       },
       include: {
         purchaseHistory: true,
@@ -134,9 +145,9 @@ const updateIngredient = async (req, res, next) => {
         ...(type && { type: type.trim() }),
         ...(brand !== undefined && { brand: brand?.trim() || null }),
         ...(unit && { unit: unit.trim() }),
-        ...(quantity !== undefined && { quantity: toOptionalFloat(quantity, 0) }),
-        ...(minQuantity !== undefined && { minQuantity: toOptionalFloat(minQuantity, 0) }),
-        ...(bottlePrice !== undefined && { bottlePrice: toOptionalFloat(bottlePrice) }),
+        ...(quantity !== undefined && { quantity: toOptionalFloat(quantity, 0, 'Quantity') }),
+        ...(minQuantity !== undefined && { minQuantity: toOptionalFloat(minQuantity, 0, 'Minimum quantity') }),
+        ...(bottlePrice !== undefined && { bottlePrice: toOptionalFloat(bottlePrice, null, 'Bottle price') }),
       },
       include: {
         purchaseHistory: {

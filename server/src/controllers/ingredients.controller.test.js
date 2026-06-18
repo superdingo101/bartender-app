@@ -127,6 +127,56 @@ describe('ingredients controller create and edit handling', () => {
     expect(next).not.toHaveBeenCalled();
   });
 
+  it.each([
+    ['quantity', '12oz', 'Quantity must be a valid number'],
+    ['quantity', '1,000', 'Quantity must be a valid number'],
+    ['minQuantity', '5 bottles', 'Minimum quantity must be a valid number'],
+    ['bottlePrice', '$9.99', 'Bottle price must be a valid number'],
+  ])('rejects malformed create numeric field %s=%p', async (field, value, message) => {
+    const req = {
+      body: {
+        name: 'Lime Juice',
+        type: 'Juice',
+        unit: 'oz',
+        [field]: value,
+      },
+    };
+    const res = mockResponse();
+    const next = jest.fn();
+
+    await createIngredient(req, res, next);
+
+    expect(prisma.ingredient.create).not.toHaveBeenCalled();
+    expect(next).toHaveBeenCalledWith(expect.objectContaining({
+      message,
+      statusCode: 400,
+    }));
+  });
+
+  it.each([
+    ['quantity', '12oz', 'Quantity must be a valid number'],
+    ['quantity', '1,000', 'Quantity must be a valid number'],
+    ['minQuantity', '5 bottles', 'Minimum quantity must be a valid number'],
+    ['bottlePrice', '$9.99', 'Bottle price must be a valid number'],
+  ])('rejects malformed update numeric field %s=%p', async (field, value, message) => {
+    const req = {
+      params: { id: 'ingredient-1' },
+      body: {
+        [field]: value,
+      },
+    };
+    const res = mockResponse();
+    const next = jest.fn();
+
+    await updateIngredient(req, res, next);
+
+    expect(prisma.ingredient.update).not.toHaveBeenCalled();
+    expect(next).toHaveBeenCalledWith(expect.objectContaining({
+      message,
+      statusCode: 400,
+    }));
+  });
+
   it('returns a conflict when editing an ingredient to a duplicate name', async () => {
     prisma.ingredient.update.mockRejectedValue({ code: 'P2002' });
     const req = {
