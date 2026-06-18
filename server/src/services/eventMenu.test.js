@@ -13,10 +13,16 @@ jest.mock('./socket', () => ({
 const { eventMenuInclude } = require('./eventMenu');
 
 describe('eventMenuInclude', () => {
-  it('includes drink ingredients for customer-facing liquor filters', () => {
+  it('selects only public drink ingredient fields for customer-facing liquor filters', () => {
     expect(eventMenuInclude.drinks.include.drink.include.ingredients).toEqual({
-      include: {
-        ingredient: true,
+      select: {
+        ingredient: {
+          select: {
+            name: true,
+            type: true,
+            brand: true,
+          },
+        },
       },
     });
   });

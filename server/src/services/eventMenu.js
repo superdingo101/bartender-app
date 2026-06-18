@@ -22,8 +22,14 @@ const eventMenuInclude = {
             },
           },
           ingredients: {
-            include: {
-              ingredient: true,
+            select: {
+              ingredient: {
+                select: {
+                  name: true,
+                  type: true,
+                  brand: true,
+                },
+              },
             },
           },
         },
