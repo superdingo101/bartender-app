@@ -6,6 +6,10 @@ const eventMenuInclude = {
     where: {
       available: true,
     },
+    orderBy: [
+      { displayOrder: 'asc' },
+      { createdAt: 'asc' },
+    ],
     include: {
       drink: {
         include: {

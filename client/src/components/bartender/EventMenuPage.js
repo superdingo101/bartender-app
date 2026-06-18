@@ -68,6 +68,33 @@ const EventMenuPage = () => {
     }
   };
 
+  const handleReorderDrink = async (fromIndex, toIndex) => {
+    if (toIndex < 0 || toIndex >= event.drinks.length) {
+      return;
+    }
+
+    const reorderedDrinks = [...event.drinks];
+    const [movedDrink] = reorderedDrinks.splice(fromIndex, 1);
+    reorderedDrinks.splice(toIndex, 0, movedDrink);
+
+    setEvent((prevEvent) => ({
+      ...prevEvent,
+      drinks: reorderedDrinks,
+    }));
+
+    try {
+      await axios.put(
+        `${API_URL}/api/events/${id}/drinks/reorder`,
+        { drinkIds: reorderedDrinks.map((eventDrink) => eventDrink.drinkId) },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      loadData();
+    } catch (error) {
+      alert('Failed to update menu order: ' + (error.response?.data?.error || error.message));
+      loadData();
+    }
+  };
+
   const handleUpdatePrice = async (drinkId, newPrice) => {
     try {
       await axios.put(
@@ -98,7 +125,7 @@ const EventMenuPage = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <Navigation />
-      
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <button
           onClick={() => navigate('/bartender/events')}
@@ -126,9 +153,14 @@ const EventMenuPage = () => {
           </div>
         </div>
 
-        <h2 className="text-xl font-bold text-gray-800 mb-4">
-          Event Menu ({event.drinks.length} drinks)
-        </h2>
+        <div className="mb-4">
+          <h2 className="text-xl font-bold text-gray-800">
+            Event Menu ({event.drinks.length} drinks)
+          </h2>
+          <p className="text-sm text-gray-500 mt-1">
+            Use the ↑ and ↓ controls to change the order customers see.
+          </p>
+        </div>
 
         {event.drinks.length === 0 ? (
           <div className="bg-white rounded-lg shadow p-12 text-center">
@@ -144,13 +176,17 @@ const EventMenuPage = () => {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {event.drinks.map(eventDrink => (
+            {event.drinks.map((eventDrink, index) => (
               <EventDrinkCard
                 key={eventDrink.id}
                 eventDrink={eventDrink}
                 onRemove={() => handleRemoveDrink(eventDrink.drinkId)}
                 onToggleAvailability={() => handleToggleAvailability(eventDrink.drinkId, eventDrink.available)}
                 onUpdatePrice={(price) => handleUpdatePrice(eventDrink.drinkId, price)}
+                onMoveUp={() => handleReorderDrink(index, index - 1)}
+                onMoveDown={() => handleReorderDrink(index, index + 1)}
+                isFirst={index === 0}
+                isLast={index === event.drinks.length - 1}
               />
             ))}
           </div>
