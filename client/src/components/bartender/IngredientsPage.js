@@ -59,14 +59,14 @@ const IngredientsPage = () => {
       <Navigation />
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="flex justify-between items-center mb-6">
+        <div className="flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-center mb-6">
           <h2 className="text-2xl font-bold text-gray-800">Ingredients Management</h2>
           <button
             onClick={() => {
               setEditingItem(null);
               setShowModal(true);
             }}
-            className="px-6 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition"
+            className="w-full sm:w-auto px-6 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition"
           >
             ➕ Add Ingredient
           </button>
@@ -92,7 +92,8 @@ const IngredientsPage = () => {
           </div>
         ) : (
           <div className="bg-white rounded-lg shadow overflow-hidden">
-            <table className="min-w-full divide-y divide-gray-200">
+            <div className="overflow-x-auto" aria-label="Ingredients table scroll container">
+              <table className="min-w-[900px] divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
@@ -137,7 +138,8 @@ const IngredientsPage = () => {
                   </tr>
                 ))}
               </tbody>
-            </table>
+              </table>
+            </div>
           </div>
         )}
       </div>
