@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { getEventByCode } from '../../services/api';
+import { APP_NAME } from '../../config/app';
 import './EventCodeEntry.css';
 
 const EVENT_CODE_MAX_LENGTH = 20;
@@ -9,7 +10,6 @@ const EventCodeEntry = ({ onEventFound }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   
-  const appName = process.env.REACT_APP_BARTENDING_COMPANY || 'The Bartending App';
   const EVENT_EXPIRY_HOURS = 12;
 
   // Check for event code in URL parameters (from QR code scan) or localStorage
@@ -99,7 +99,7 @@ const EventCodeEntry = ({ onEventFound }) => {
     <div className="event-code-entry">
       <div className="entry-container">
         <div className="entry-header">
-          <h1>🍸 Welcome to {appName}</h1>
+          <h1>🍸 Welcome to {APP_NAME}</h1>
           <p>Enter your event code to get started</p>
         </div>
 
